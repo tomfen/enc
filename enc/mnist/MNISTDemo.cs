@@ -26,35 +26,41 @@ using Encog.ML.Factory;
 using Encog.Util.Normalize;
 using Encog.ML.Data.Versatile;
 using Encog.Neural.Networks.Training.Propagation;
+using System.Runtime.InteropServices;
+using enc.mnist;
 
-namespace enc
+namespace enc.mnist
 {
-    class MNISTDemo
+    class MnistDemo : IExperiment
     {
-        
+        public string Command => "m";
 
-        static public void run()
+        public string Description => "";
+
+        public string Options => "";
+
+        public string Name => "Klasyfikacja zbioru MNIST";
+
+        public void Run(Dictionary<string, string> options)
         {
-            var Y12 = MNISTReader.readLabels(@"..\..\train-labels.idx1-ubyte");
-            var X1 = MNISTReader.readIdx(@"..\..\train-images.idx3-ubyte");
+            double[] _Y1 = MnistReader.ReadLabels(@"..\..\..\..\..\train-labels.idx1-ubyte");
+            double[] _Y2 = MnistReader.ReadLabels(@"..\..\..\..\..\t10k-labels.idx1-ubyte");
 
-            var Y22 = MNISTReader.readLabels(@"..\..\t10k-labels.idx1-ubyte");
-            var X2 = MNISTReader.readIdx(@"..\..\t10k-images.idx3-ubyte");
+            Mat[] X1 = MnistReader.ReadImages(@"..\..\..\..\..\train-images.idx3-ubyte");
+            Mat[] X2 = MnistReader.ReadImages(@"..\..\..\..\..\t10k-images.idx3-ubyte");
 
-
-            var Y1 = OneHotEncoder.transform(Y12);
-            var Y2 = OneHotEncoder.transform(Y22);
-
-            BasicMLDataSet trainingSet = new BasicMLDataSet(X1, Y1);
-            BasicMLDataSet validationSet = new BasicMLDataSet(X2, Y2);
-
-            IActivationFunction[] funs =
+            for (int i = 60000 - 100; i < 60000; i++)
             {
-                //new MyReLU(),
-                //new ActivationSigmoid(),
-                new ActivationElliott(),
-                //new ActivationLOG(),
-            };
+                X1[i].SaveImage(@"..\..\..\..\..\TEST\" + i + ".png");
+                ImageUtil.Deskew(X1[i]).SaveImage(@"..\..\..\..\..\TEST\" + i + "D.png");
+            }
+
+            var Y1 = OneHotEncoder.transform(_Y1);
+            var Y2 = OneHotEncoder.transform(_Y2);
+
+
+            BasicMLDataSet trainingSet = MatDataSet.Convert(X1, Y1);
+            BasicMLDataSet validationSet = MatDataSet.Convert(X2, Y2);
 
             Tuple<string, string>[] trainAlgs =
             {
@@ -67,38 +73,34 @@ namespace enc
 
             foreach (var trainAlg in trainAlgs)
             {
-                foreach (var fun in funs)
+
+                BasicNetwork network = new BasicNetwork();
+                network.AddLayer(new BasicLayer(null, true, 28 * 28));
+                network.AddLayer(new BasicLayer(new ActivationSigmoid(), true, 100));
+                network.AddLayer(new BasicLayer(new ActivationSigmoid(), false, 10));
+                network.Structure.FinalizeStructure();
+                network.Reset(1);
+
+                var train = new MLTrainFactory().Create(network, trainingSet, trainAlg.Item1, trainAlg.Item2);
+
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss" + "| Start Error" + train.Error));
+                int epoch = 1;
+                while (epoch <= 10)
                 {
-                    
-                    BasicNetwork network = new BasicNetwork();
-                    network.AddLayer(new BasicLayer(null, true, 28 * 28));
-                    network.AddLayer(new BasicLayer(fun, true, 100));
-                    network.AddLayer(new BasicLayer(new ActivationSigmoid(), false, 10));
-                    network.Structure.FinalizeStructure();
-                    network.Reset(1);
-                    
-                    var train = new MLTrainFactory().Create(network, trainingSet, trainAlg.Item1, trainAlg.Item2);
-                    
-                    var end = DateTime.UtcNow.AddMinutes(10);
-                    int epoch = 1;
-                    while (epoch <= 13)
-                    {
-                        train.Iteration();
-                        Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
-                    }
-
-                    train.FinishTraining();
-
-
-
-                    Console.WriteLine(Evaluation.accuracy(network, validationSet));
-
-                    //Encog.Persist.EncogDirectoryPersistence.SaveObject(new FileInfo("..\\NET"), network);
+                    train.Iteration();
+                    Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
                 }
-            }
-            Console.ReadKey();
-        }
 
+                train.FinishTraining();
+
+
+
+                Console.WriteLine(Evaluation.accuracy(network, validationSet));
+
+                //Encog.Persist.EncogDirectoryPersistence.SaveObject(new FileInfo("..\\NET"), network);
+
+            }
+        }
     }
 
     public static class Helpers

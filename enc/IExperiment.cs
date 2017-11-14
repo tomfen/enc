@@ -7,8 +7,11 @@ namespace enc
 {
     interface IExperiment
     {
-        string getCmd();
+        string Command { get; }
+        string Name { get; }
+        string Description { get; }
+        string Options { get; }
 
-        void run();
+        void Run(Dictionary<string, string> options);
     }
 }

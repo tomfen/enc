@@ -1,15 +1,16 @@
-﻿using System;
+﻿using OpenCvSharp;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace enc
+namespace enc.mnist
 {
-    class MNISTReader
+    class MnistReader
     {
-        public static double[] readLabels(string path)
+        public static double[] ReadLabels(string path)
         {
             FileStream file = new FileStream(path, FileMode.Open);
             BinaryReader br = new BinaryReader(file);
@@ -28,11 +29,10 @@ namespace enc
             return ret;
         }
 
-        static public double[][] readIdx(String fileName)
+        static public Mat[] ReadImages(String fileName)
         {
             FileStream file = new FileStream(fileName, FileMode.Open);
             BinaryReader br = new BinaryReader(file);
-
 
             int magic = br.ReadInt32BE();
             int dim = magic & 0xff;
@@ -44,17 +44,14 @@ namespace enc
                 itemSize *= br.ReadInt32BE();
             }
 
-            double[][] ret = new double[items][];
+            Mat[] ret = new Mat[items];
 
             for (int i = 0; i < items; i++)
             {
-                ret[i] = new double[itemSize];
-                byte[] read = br.ReadBytes(itemSize);
-
-                for (int j = 0; j < itemSize; j++)
-                {
-                    ret[i][j] = read[j];
-                }
+                var m = new Mat(28, 28, MatType.CV_8UC1, br.ReadBytes(28*28));
+                var n = new Mat();
+                m.ConvertTo(n, MatType.CV_64FC1);
+                ret[i] = n;
             }
 
             file.Close();
@@ -62,5 +59,6 @@ namespace enc
 
             return ret;
         }
+        
     }
 }

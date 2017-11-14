@@ -1,49 +1,48 @@
-﻿using enc.lunar;
+﻿using enc.lander;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace enc
 {
     public static class Program
     {
-        private static List<Type> examples = new List<Type>();
+        private static IEnumerable<IExperiment> examples;
+
+        static public void WriteMenu()
+        {
+            foreach (IExperiment e in examples)
+            {
+                Console.WriteLine(e.Command.PadRight(5) + " | " + e.Name);
+            }
+        }
 
         static void Main(string[] args)
         {
-            /*examples = Assembly
-                    .GetExecutingAssembly()
-                    .GetTypes()
-                    .Where((t) => { return t.GetInterfaces().Contains(typeof(IExperiment)); })
-                    .ToList();
+            examples = from t in Assembly.GetExecutingAssembly().GetTypes()
+                       where t.GetInterfaces().Contains(typeof(IExperiment))
+                       select Activator.CreateInstance(t) as IExperiment;
 
-            foreach (Type t in examples)
-                Console.WriteLine(t.);
-            Console.ReadKey();*/
-
-
+            WriteMenu();
 
             string com;
             do
             {
                 com = Console.ReadLine();
+                var options = ExperimentOptions.ParseOptions(com);
 
-                switch (com)
+                foreach(IExperiment e in examples)
                 {
-                    case "a":
-                        ActivationBenchmark.run();
-                        break;
-
-                    case "t":
-                        MNISTDemo.run();
-                        break;
-
-                    case "r":
-                        ReutersDemo.run();
-                        break;
-
-                    case "l":
-                        LunarLander.run();
-                        break;
+                    try
+                    {
+                        if (com.Split('-')[0].Trim() == e.Command)
+                            e.Run(options);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Write(ex);
+                    }
                 }
             } while (com != "e");
         }

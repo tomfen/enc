@@ -4,9 +4,9 @@ using Encog.ML.Data.Basic;
 using Encog.Neural.Networks;
 using Encog.Util.Arrayutil;
 
-namespace enc.lunar
+namespace enc.lander
 {
-    public class NeuralPilot
+    public class NeuralPilotdd
     {
         private readonly NormalizedField _fuelStats;
         private readonly BasicNetwork _network;
@@ -14,7 +14,7 @@ namespace enc.lunar
         private readonly NormalizedField _altitudeStats;
         private readonly NormalizedField _velocityStats;
 
-        public NeuralPilot(BasicNetwork network, bool track)
+        public NeuralPilotdd(BasicNetwork network, bool track)
         {
             _fuelStats = new NormalizedField(NormalizationAction.Normalize, "fuel", 200, 0, -0.9, 0.9);
             _altitudeStats = new NormalizedField(NormalizationAction.Normalize, "altitude", 10000, 0, -0.9, 0.9);

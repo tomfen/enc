@@ -9,8 +9,11 @@ using Microsoft.Xna.Framework.Graphics;
 using VelcroPhysics.DebugViews.MonoGame;
 using VelcroPhysics.Factories;
 using Microsoft.Xna.Framework.Input;
+using Encog.Neural.Networks;
+using Encog.Neural.Networks.Layers;
+using Encog.Engine.Network.Activation;
 
-namespace enc.lunar
+namespace enc.lander
 {
     public static class ConvertUnits
     {
@@ -113,26 +116,24 @@ namespace enc.lunar
         private readonly GraphicsDeviceManager _graphics;
         private Body _floor;
         private SpriteBatch _spriteBatch;
-        private float _timer;
         private World _world;
         private DebugView _debugView;
+        private Lander lander;
+
+        public ILanderPilot Pilot;
 
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this)
                             {
                                 PreferredBackBufferHeight = 800,
-                                PreferredBackBufferWidth = 480,
-                                IsFullScreen = false
+                                PreferredBackBufferWidth = 600,
+                                IsFullScreen = false,
                             };
-
+            
             Content.RootDirectory = "Content";
-
-            // Frame rate is fps by default for Windows Phone.
-            TargetElapsedTime = TimeSpan.FromTicks(333333);
-
-            // Extend battery life under lock.
-            InactiveSleepTime = TimeSpan.FromSeconds(1);
+            
+            TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0/60.0);
         }
 
         protected override void LoadContent()
@@ -146,7 +147,7 @@ namespace enc.lunar
             // Create our World with a gravity of vertical units
             if (_world == null)
             {
-                _world = new World(Vector2.UnitY * 10);
+                _world = new World(new Vector2(0, 2));
             }
             else
             {
@@ -155,66 +156,38 @@ namespace enc.lunar
 
             _debugView = new DebugView(_world);
             _debugView.LoadContent(_graphics.GraphicsDevice, this.Content);
-            _debugView.AppendFlags(VelcroPhysics.Extensions.DebugView.DebugViewFlags.PerformanceGraph);
+            _debugView.AppendFlags(
+                VelcroPhysics.Extensions.DebugView.DebugViewFlags.PerformanceGraph |
+                VelcroPhysics.Extensions.DebugView.DebugViewFlags.DebugPanel |
+                VelcroPhysics.Extensions.DebugView.DebugViewFlags.Controllers);
+            
+            _floor = BodyFactory.CreateEdge(_world, new Vector2(0, 5), new Vector2(5, 5));
 
-            // Create and position our floor
-            _floor = BodyFactory.CreateRectangle(
-                _world,
-                ConvertUnits.ToSimUnits(480),
-                ConvertUnits.ToSimUnits(50),
-                10f, bodyType:BodyType.Static);
-            _floor.Position = ConvertUnits.ToSimUnits(240, 605);
-            _floor.Restitution = 0.2f;
-            _floor.Friction = 0.2f;
-           
+            lander = new Lander(_world, new Vector2(1.5f, 0));
+
+            BasicNetwork network = new BasicNetwork();
+            network.AddLayer(new BasicLayer(null, true, 2));
+            network.AddLayer(new BasicLayer(new ActivationSigmoid(), false, 2));
+            network.Structure.FinalizeStructure();
+            network.Reset();
+
+            Pilot = new NeuralPilot(network, _world, lander);//KeyboardPilot(lander);
         }
 
         protected override void Update(GameTime gameTime)
         {
-            // Allows the game to exit
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-
-            // Create a random box every second
-            _timer += (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (_timer >= 1.0f)
+            
+            if (Keyboard.GetState().IsKeyDown(Keys.R))
             {
-                // Reset our timer
-                _timer = 0f;
-
-                // Determine a random size for each box
-                var random = new Random();
-                var width = random.Next(20, 100);
-                var height = random.Next(20, 100);
-
-                // Create it and store the size in the user data
-                var box = BodyFactory.CreateRectangle(
-                    _world,
-                    ConvertUnits.ToSimUnits(width),
-                    ConvertUnits.ToSimUnits(height),
-                    10f,
-                    new Vector2(width, height));
-
-                box.BodyType = BodyType.Dynamic;
-                box.Restitution = 0.2f;
-                box.Friction = 0.2f;
-
-                // Randomly pick a location along the top to drop it from
-                box.Position = ConvertUnits.ToSimUnits(random.Next(50, 400), 0);
+                lander.Destroy();
+                lander = new Lander(_world, new Vector2(1.5f, 0));
             }
 
-            // Advance all the elements in the world
-            _world.Step(Math.Min((float)gameTime.ElapsedGameTime.TotalMilliseconds * 0.001f, (1f / 30f)));
-
-            // Clean up any boxes that have fallen offscreen
-            foreach (var box in from box in _world.BodyList
-                                let pos = ConvertUnits.ToDisplayUnits(box.Position)
-                                where pos.Y > _graphics.GraphicsDevice.Viewport.Height
-                                select box)
-            {
-                _world.RemoveBody(box);
-            }
-
+            Pilot.Process();
+            _world.Step(1f / 60f);
+            
             base.Update(gameTime);
         }
 
@@ -235,5 +208,6 @@ namespace enc.lunar
 
             base.Draw(gameTime);
         }
+        
     }
 }

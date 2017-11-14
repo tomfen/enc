@@ -6,14 +6,24 @@ using Encog.ML.Train;
 using Encog.Neural.Networks;
 using Encog.Neural.Pattern;
 using System;
+using System.Collections.Generic;
 
-namespace enc.lunar
+namespace enc.lander
 {
-    public class LunarLander
+    public class LunarLander : IExperiment
     {
-        public static void run()
+        public string Command => "l";
+
+        public string Name => "Symulacja l¹downika";
+
+        public string Options => "";
+
+        public string Description => "";
+
+        public void Run(Dictionary<string, string> options)
         {
             new Game1().Run();
+            return;
 
             BasicNetwork network = CreateNetwork();
 
@@ -41,7 +51,7 @@ namespace enc.lunar
 
             Console.WriteLine(@"\nHow the winning network landed:");
             network = (BasicNetwork) train.Method;
-            var pilot = new NeuralPilot(network, true);
+            var pilot = new NeuralPilotdd(network, true);
             Console.WriteLine(pilot.ScorePilot());
         }
 

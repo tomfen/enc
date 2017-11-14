@@ -12,12 +12,22 @@ using Encog.Util.CSV;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
 using Encog.ML.Train.Strategy;
 using Encog.ML.Train.Strategy.End;
+using Encog.Neural.RBF;
+using Encog.Neural.Rbf.Training;
 
 namespace enc
 {
-    class ReutersDemo
+    class ReutersDemo : IExperiment
     {
-        public static void run()
+        public string Command => "r";
+
+        public string Name => "Klasyfikacja tekstu";
+
+        public string Description => "";
+
+        public string Options => "";
+
+        public void Run(Dictionary<string, string> options)
         {
             int features = 300;
 
@@ -28,16 +38,19 @@ namespace enc
             
             BasicNetwork network = new BasicNetwork();
             network.AddLayer(new BasicLayer(null, true, features));
-            network.AddLayer(new BasicLayer(new MyReLU(), true, 1));
+            network.AddLayer(new BasicLayer(new ActivationElliottSymmetric(), true, 500));
             network.AddLayer(new BasicLayer(new ActivationElliottSymmetric(), false, 10));
             network.Structure.FinalizeStructure();
             network.Reset();
 
-            var train = new ResilientPropagation(network, trainingSet);
+            var train = new ResilientPropagation(network, trainingSet)
+            {
+                RType = RPROPType.iRPROPp
+            };
 
-            train.RType = RPROPType.iRPROPp;
 
-            var timeLimit = new EndMinutesStrategy(60);
+
+            var timeLimit = new EndMinutesStrategy(10);
 
             train.AddStrategy(timeLimit);
 

@@ -47,29 +47,30 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ActivationBenchmark.cs" />
+    <Compile Include="Benchmarks\ActivationBenchmark.cs" />
     <Compile Include="Evaluation.cs" />
-    <Compile Include="Game1.cs" />
-    <Compile Include="Game12.cs" />
+    <Compile Include="ExperimentOptions.cs" />
+    <Compile Include="lander\Game1.cs" />
     <Compile Include="IExperiment.cs" />
     <Compile Include="ImageUtil.cs" />
-    <Compile Include="LanderSimulator.cs" />
-    <Compile Include="LunarLander.cs" />
-    <Compile Include="MNISTDemo.cs" />
-    <Compile Include="MNISTReader.cs" />
-    <Compile Include="MyReLU.cs" />
+    <Compile Include="lander\ILanderPilot.cs" />
+    <Compile Include="lander\KeyboardPilot.cs" />
+    <Compile Include="lander\Lander.cs" />
+    <Compile Include="lander\bla\LanderSimulator.cs" />
+    <Compile Include="lander\LunarLander.cs" />
+    <Compile Include="lander\NeuralPilot.cs" />
+    <Compile Include="mnist\MatDataSet.cs" />
+    <Compile Include="mnist\MnistDemo.cs" />
+    <Compile Include="mnist\MnistReader.cs" />
     <Compile Include="NetworkUtil.cs" />
-    <Compile Include="NeuralPilot.cs" />
+    <Compile Include="lander\bla\NeuralPilotdd.cs" />
     <Compile Include="OneHotEncoder.cs" />
-    <Compile Include="PilotScore.cs" />
+    <Compile Include="lander\PilotScore.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReutersDemo.cs" />
+    <Compile Include="reuters\ReutersDemo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="encog-core-cs, Version=3.3.0.0, Culture=neutral, PublicKeyToken=3e882172b12155d4, processorArchitecture=MSIL">
-      <HintPath>..\packages\encog-dotnet-core.3.4.0\lib\encog-core-cs.dll</HintPath>
-    </Reference>
     <Reference Include="MonoGame.Framework">
       <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\Windows\MonoGame.Framework.dll</HintPath>
     </Reference>
@@ -97,6 +98,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\encog-dotnet-core\encog-core-cs\encog-core-cs.csproj">
+      <Project>{ac6fadf9-0904-4ebd-b22c-1c787c7e7a95}</Project>
+      <Name>encog-core-cs</Name>
+    </ProjectReference>
     <ProjectReference Include="DebugViews\MonoGame\MonoGame.csproj">
       <Project>{d87d14bd-35b2-437b-8c7f-b83357b92689}</Project>
       <Name>MonoGame</Name>
@@ -106,6 +111,7 @@
       <Name>VelcroPhysics.MonoGame</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

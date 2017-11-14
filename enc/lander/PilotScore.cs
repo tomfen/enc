@@ -6,13 +6,13 @@ using Encog.ML;
 using Encog.Neural.Networks;
 using Encog.Neural.Networks.Training;
 
-namespace enc.lunar
+namespace enc.lander
 {
     public class PilotScore : ICalculateScore
     {
         public double CalculateScore(IMLMethod network)
         {
-            NeuralPilot pilot = new NeuralPilot((BasicNetwork)network, false);
+            NeuralPilotdd pilot = new NeuralPilotdd((BasicNetwork)network, false);
             return pilot.ScorePilot();
         }
 

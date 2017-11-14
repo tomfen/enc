@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using Encog.Util;
 
-namespace enc.lunar
+namespace enc.lander
 {
     public class LanderSimulator
     {

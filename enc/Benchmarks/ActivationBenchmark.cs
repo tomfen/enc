@@ -3,14 +3,23 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace enc
 {
-    class ActivationBenchmark
+    class ActivationBenchmark : IExperiment
     {
-        static private double[] randomArray(int size, double min, double max)
+        public string Command => "a";
+
+        public string Description => "Testuje czas obliczania funckji aktywacji";
+
+        public string Options => "";
+
+        public string Name => "Test funkcji aktywacji";
+
+        static private double[] RandomArray(int size, double min, double max)
         {
             var ret = new double[size];
             var random = new Random();
@@ -23,37 +32,31 @@ namespace enc
             return ret;
         }
 
-        static public void run()
+        public void Run(Dictionary<string, string> options)
         {
-            IActivationFunction[] funs =
-            {
-                /*new ActivationBiPolar(),
-                new ActivationElliottSymmetric(),
-                new ActivationLOG(),*/
-                new ActivationReLU(),
-                new MyReLU(),
-                /*new ActivationClippedLinear(),
-                new ActivationLinear(),
-                new ActivationRamp(),
-                new ActivationSmoothReLU(),
-                new ActivationTANH(),
-                new ActivationStep(),*/
-            };
+            Assembly assembly = Assembly.GetAssembly(typeof(IActivationFunction));
 
-            double[] arr = randomArray(10000000, -2.0, 2.0);
+            var funs = from t in assembly.GetTypes()
+                            where t.GetInterfaces().Contains(typeof(IActivationFunction))
+                                     && t.GetConstructor(Type.EmptyTypes) != null
+                            select Activator.CreateInstance(t) as IActivationFunction;
+
+            double[] arr = RandomArray(20000000, -10.0, 10.0);
 
             Console.WriteLine("Pochodna:");
             foreach (var fun in funs)
             {
+                if (!fun.HasDerivative)
+                    continue;
+
                 double[] res = (double[])arr.Clone();
 
                 var stopwatch = new Stopwatch();
 
                 stopwatch.Start();
-
-                for (int i = 0; i < 5; i++) //kilka próbek
-                    for (int j = 0; j < res.Length; j++)
-                        fun.DerivativeFunction(res[i], 0);
+                
+                for (int j = 0; j < res.Length; j++)
+                    fun.DerivativeFunction(res[j], 0);
 
                 stopwatch.Stop();
                 
@@ -61,7 +64,7 @@ namespace enc
             }
 
 
-            Console.WriteLine("Wartość funkcji:");
+            Console.WriteLine("\nWartość funkcji:");
             foreach (var fun in funs)
             {
                 double[] res = (double[])arr.Clone();
@@ -69,16 +72,13 @@ namespace enc
                 var stopwatch = new Stopwatch();
 
                 stopwatch.Start();
-
-                for (int i = 0; i < 5; i++)
-                    fun.ActivationFunction(res, 0, res.Length);
+                
+                fun.ActivationFunction(res, 0, res.Length);
 
                 stopwatch.Stop();
 
                 Console.WriteLine(fun.ToString().PadRight(60) + "time: " + stopwatch.Elapsed.ToString(@"ss\.ffff"));
             }
-
-            Console.ReadKey();
         }
     }
 }

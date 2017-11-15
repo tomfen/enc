@@ -11,30 +11,31 @@ using VelcroPhysics.Utilities;
 
 namespace enc.lander
 {
-    class NeuralPilot : ILanderPilot
+    class NeuralPilot : LanderPilot
     {
         BasicNetwork network;
-        World world;
-        private Lander _lander;
-
-        public NeuralPilot(BasicNetwork network, World world, Lander lander)
+        
+        public NeuralPilot(BasicNetwork network) : base()
         {
             this.network = network;
-            this.world = world;
-            this._lander = lander;
         }
-
-        public Lander Lander => _lander;
-
-        public void Process()
+        
+        public override void Process()
         {
-            var input = new BasicMLData(2);
-            input[0] = Lander.Vessel.Position.X;
-            input[1] = Lander.Vessel.Position.Y;
+            var input = new BasicMLData(6);
+            input[0] = Lander.Vessel.Position.X/4;
+            input[1] = Lander.Vessel.Rotation/2;
+            input[2] = Lander.Vessel.LinearVelocity.X;
+            input[3] = Lander.Vessel.LinearVelocity.Y;
+            input[4] = Lander.Vessel.AngularVelocity;
+            input[5] = (Lander.Vessel.Position.Y + 3) / 6;
+
             IMLData output = network.Compute(input);
 
             Lander.ThrustLeft((float)output[0]);
-            Lander.ThrustLeft((float)output[1]);
+            Lander.ThrustRight((float)output[1]);
+            Lander.ThrustUp((float)output[2]);
+
         }
     }
 }

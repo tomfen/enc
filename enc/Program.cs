@@ -34,15 +34,8 @@ namespace enc
 
                 foreach(IExperiment e in examples)
                 {
-                    try
-                    {
                         if (com.Split('-')[0].Trim() == e.Command)
                             e.Run(options);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Write(ex);
-                    }
                 }
             } while (com != "e");
         }

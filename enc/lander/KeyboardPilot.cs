@@ -2,21 +2,13 @@
 
 namespace enc.lander
 {
-    internal class KeyboardPilot : ILanderPilot
+    internal class KeyboardPilot : LanderPilot
     {
-        private Lander _lander;
-
-        public KeyboardPilot(Lander lander)
+        public override void Process()
         {
-            _lander = lander;
-        }
-        
-        Lander ILanderPilot.Lander => _lander;
-
-        public void Process()
-        {
-            _lander.ThrustLeft(Keyboard.GetState().IsKeyDown(Keys.A) ? 1 : 0);
-            _lander.ThrustRight(Keyboard.GetState().IsKeyDown(Keys.D) ? 1 : 0);
+            Lander.ThrustLeft(Keyboard.GetState().IsKeyDown(Keys.A) ? 1 : 0);
+            Lander.ThrustRight(Keyboard.GetState().IsKeyDown(Keys.D) ? 1 : 0);
+            Lander.ThrustUp(Keyboard.GetState().IsKeyDown(Keys.W) ? 1 : 0);
         }
     }
 }

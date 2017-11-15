@@ -20,6 +20,10 @@ namespace enc.lander
         public Body LegRight { get; private set; }
         public WeldJoint JointLeft { get; private set; }
         public WeldJoint JointRight { get; private set; }
+        public bool LeftLegBroken { get; private set; }
+        public bool RightLegBroken { get; private set; }
+
+        public float fuel = 30000;
         
         private readonly static Vector2[] shape = new Vector2[] {
                     new Vector2(0.1f, 0),
@@ -52,28 +56,60 @@ namespace enc.lander
                 LegRight, Vessel, -legOffsetR, Vessel.LocalCenter); 
 
             JointLeft.FrequencyHz = 10f;
-            JointLeft.DampingRatio = 6;
+            JointLeft.DampingRatio = 8;
+            JointLeft.Breakpoint = 20;
 
             JointRight.FrequencyHz = 10f;
-            JointRight.DampingRatio = 6;
+            JointRight.DampingRatio = 8;
+            JointRight.Breakpoint = 20;
+
+            JointLeft.Broke += (J, F) => { LeftLegBroken = true; };
+            JointRight.Broke += (J, F) => { RightLegBroken = true; };
         }
 
         public void ThrustLeft(float value)
         {
             value = MathUtils.Clamp(value, 0, 1);
+            value *= -0.3f;
 
-            Vector2 ThrustVector = Vessel.GetWorldVector(new Vector2(0, -5.5f * value));
-            
-            Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(0, 0)));
+            if (fuel > 0)
+            {
+                Vector2 ThrustVector = Vessel.GetWorldVector(new Vector2(value, 0));
+
+                Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(0.8f, 0)));
+
+                fuel -= Math.Abs(value);
+            }
         }
 
         public void ThrustRight(float value)
         {
             value = MathUtils.Clamp(value, 0, 1);
+            value *= 0.3f;
 
-            Vector2 ThrustVector = Vessel.GetWorldVector(new Vector2(0, -5.5f * value));
+            if (fuel > 0)
+            {
+                Vector2 ThrustVector = Vessel.GetWorldVector(new Vector2(value, 0));
 
-            Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(1, 0)));
+                Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(0.2f, 0)));
+
+                fuel -= Math.Abs(value);
+            }
+        }
+
+        public void ThrustUp(float value)
+        {
+            value = MathUtils.Clamp(value, 0, 1);
+            value *= -15f;
+
+            if (fuel > 0)
+            {
+                Vector2 ThrustVector = Vessel.GetWorldVector(new Vector2(0, value));
+
+                Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(0.5f, 1)));
+
+                fuel -= Math.Abs(value);
+            }
         }
 
         public void Destroy()
@@ -83,6 +119,11 @@ namespace enc.lander
             world.RemoveBody(LegLeft);
             world.RemoveBody(LegRight);
             world.RemoveBody(Vessel);
+        }
+
+        public bool IsCrashed()
+        {
+            return Math.Abs(Vessel.Rotation) > (Math.PI / 2);
         }
     }
 }

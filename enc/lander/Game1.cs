@@ -12,12 +12,13 @@ using Microsoft.Xna.Framework.Input;
 using Encog.Neural.Networks;
 using Encog.Neural.Networks.Layers;
 using Encog.Engine.Network.Activation;
+using VelcroPhysics.Extensions.DebugView;
 
 namespace enc.lander
 {
     public static class ConvertUnits
     {
-        private static float _displayUnitsToSimUnitsRatio = 100f;
+        private static float _displayUnitsToSimUnitsRatio = 30f;
         private static float _simUnitsToDisplayUnitsRatio = 1 / _displayUnitsToSimUnitsRatio;
 
         public static void SetDisplayUnitToSimUnitRatio(float displayUnitsPerSimUnit)
@@ -114,64 +115,45 @@ namespace enc.lander
     public class Game1 : Game
     {
         private readonly GraphicsDeviceManager _graphics;
-        private Body _floor;
         private SpriteBatch _spriteBatch;
-        private World _world;
+        private SpriteFont font;
         private DebugView _debugView;
-        private Lander lander;
 
-        public ILanderPilot Pilot;
+        public LanderSimulation landerSimulation;
+        
+        private float _X;
+        private float _Y;
 
-        public Game1()
+        public Game1(LanderSimulation sim)
         {
             _graphics = new GraphicsDeviceManager(this)
                             {
-                                PreferredBackBufferHeight = 800,
-                                PreferredBackBufferWidth = 600,
+                                PreferredBackBufferHeight = 600,
+                                PreferredBackBufferWidth = 800,
                                 IsFullScreen = false,
                             };
             
             Content.RootDirectory = "Content";
             
             TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0/60.0);
+
+            landerSimulation = sim;
         }
 
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
             _spriteBatch = new SpriteBatch(_graphics.GraphicsDevice);
 
             // Load our font (DebugViewXNA needs it for the DebugPanel)
-            Content.Load<SpriteFont>("font");
+            font = Content.Load<SpriteFont>("font");
 
-            // Create our World with a gravity of vertical units
-            if (_world == null)
-            {
-                _world = new World(new Vector2(0, 2));
-            }
-            else
-            {
-                _world.Clear();
-            }
 
-            _debugView = new DebugView(_world);
+            _debugView = new DebugView(landerSimulation.world);
             _debugView.LoadContent(_graphics.GraphicsDevice, this.Content);
-            _debugView.AppendFlags(
-                VelcroPhysics.Extensions.DebugView.DebugViewFlags.PerformanceGraph |
-                VelcroPhysics.Extensions.DebugView.DebugViewFlags.DebugPanel |
-                VelcroPhysics.Extensions.DebugView.DebugViewFlags.Controllers);
-            
-            _floor = BodyFactory.CreateEdge(_world, new Vector2(0, 5), new Vector2(5, 5));
-
-            lander = new Lander(_world, new Vector2(1.5f, 0));
-
-            BasicNetwork network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, true, 2));
-            network.AddLayer(new BasicLayer(new ActivationSigmoid(), false, 2));
-            network.Structure.FinalizeStructure();
-            network.Reset();
-
-            Pilot = new NeuralPilot(network, _world, lander);//KeyboardPilot(lander);
+            /*_debugView.AppendFlags(
+                DebugViewFlags.PerformanceGraph |
+                DebugViewFlags.DebugPanel |
+                DebugViewFlags.Controllers);*/
         }
 
         protected override void Update(GameTime gameTime)
@@ -181,12 +163,22 @@ namespace enc.lander
             
             if (Keyboard.GetState().IsKeyDown(Keys.R))
             {
-                lander.Destroy();
-                lander = new Lander(_world, new Vector2(1.5f, 0));
+                landerSimulation.Reset();
             }
 
-            Pilot.Process();
-            _world.Step(1f / 60f);
+            if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                _X += 0.01f;
+
+            if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                _X -= 0.01f;
+
+            if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                _Y -= 0.01f;
+
+            if (Keyboard.GetState().IsKeyDown(Keys.Down))
+                _Y += 0.01f;
+
+            landerSimulation.Step();
             
             base.Update(gameTime);
         }
@@ -197,15 +189,25 @@ namespace enc.lander
 
             _spriteBatch.Begin();
 
-            var projection = Matrix.CreateOrthographicOffCenter(
-                0f,
+            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.Position.ToString(), new Vector2(0, 0), Color.Blue);
+            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.Rotation.ToString(), new Vector2(0, 15), Color.Blue);
+            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.AngularVelocity.ToString(), new Vector2(0, 30), Color.Green);
+            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.LinearVelocity.ToString(), new Vector2(0, 45), Color.Green);
+
+            _spriteBatch.DrawString(font, landerSimulation.maxAVel.ToString(), new Vector2(200, 0), Color.Yellow);
+            _spriteBatch.DrawString(font, landerSimulation.maxYVel.ToString(), new Vector2(200, 15), Color.Yellow);
+
+            Matrix projection = Matrix.CreateOrthographicOffCenter( 0,
                 ConvertUnits.ToSimUnits(_graphics.GraphicsDevice.Viewport.Width),
-                ConvertUnits.ToSimUnits(_graphics.GraphicsDevice.Viewport.Height), 0f, 0f,
-                1f);
+                ConvertUnits.ToSimUnits(_graphics.GraphicsDevice.Viewport.Height),
+                0f, 0f, 1f);
+
+            projection.Translation = new Vector3(_X, _Y, 0);
+
             _debugView.RenderDebugData(ref projection);
 
             _spriteBatch.End();
-
+            
             base.Draw(gameTime);
         }
         

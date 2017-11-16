@@ -188,14 +188,7 @@ namespace enc.lander
             GraphicsDevice.Clear(Color.FromNonPremultiplied(0, 0, 0, 255));
 
             _spriteBatch.Begin();
-
-            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.Position.ToString(), new Vector2(0, 0), Color.Blue);
-            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.Rotation.ToString(), new Vector2(0, 15), Color.Blue);
-            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.AngularVelocity.ToString(), new Vector2(0, 30), Color.Green);
-            _spriteBatch.DrawString(font, landerSimulation.lander.Vessel.LinearVelocity.ToString(), new Vector2(0, 45), Color.Green);
-
-            _spriteBatch.DrawString(font, landerSimulation.maxAVel.ToString(), new Vector2(200, 0), Color.Yellow);
-            _spriteBatch.DrawString(font, landerSimulation.maxYVel.ToString(), new Vector2(200, 15), Color.Yellow);
+            
 
             Matrix projection = Matrix.CreateOrthographicOffCenter( 0,
                 ConvertUnits.ToSimUnits(_graphics.GraphicsDevice.Viewport.Width),
@@ -206,7 +199,10 @@ namespace enc.lander
 
             _debugView.RenderDebugData(ref projection);
 
+            _spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(), Color.White);
+
             _spriteBatch.End();
+
             
             base.Draw(gameTime);
         }

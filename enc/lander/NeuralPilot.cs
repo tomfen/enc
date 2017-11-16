@@ -1,6 +1,7 @@
 ﻿using Encog.ML.Data;
 using Encog.ML.Data.Basic;
 using Encog.Neural.Networks;
+using Encog.Util.Arrayutil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,9 @@ namespace enc.lander
     class NeuralPilot : LanderPilot
     {
         BasicNetwork network;
-        
+
+        NormalizedField Altitude = new NormalizedField(NormalizationAction.Normalize, "alt", 0, -10, 0.9, 0.9);
+
         public NeuralPilot(BasicNetwork network) : base()
         {
             this.network = network;
@@ -23,12 +26,14 @@ namespace enc.lander
         public override void Process()
         {
             var input = new BasicMLData(6);
-            input[0] = Lander.Vessel.Position.X/4;
-            input[1] = Lander.Vessel.Rotation/2;
-            input[2] = Lander.Vessel.LinearVelocity.X;
-            input[3] = Lander.Vessel.LinearVelocity.Y;
-            input[4] = Lander.Vessel.AngularVelocity;
-            input[5] = (Lander.Vessel.Position.Y + 3) / 6;
+            input[0] = Lander.Vessel.LinearVelocity.Y;
+            input[1] = Lander.Vessel.LinearVelocity.X;
+
+            input[2] = Altitude.Normalize(Lander.Vessel.WorldCenter.Y);
+            input[3] = Lander.Vessel.WorldCenter.X;
+
+            input[4] = Lander.Vessel.Rotation;
+            input[5] = Lander.Vessel.AngularVelocity;
 
             IMLData output = network.Compute(input);
 

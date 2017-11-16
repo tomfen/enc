@@ -25,29 +25,47 @@ namespace enc.lander
         {
             LanderPilot pilot;
 
+            int population = options.ContainsKey("p") ? int.Parse(options["p"]) : 100;
+            int epochs = options.ContainsKey("e") ? int.Parse(options["e"]) : 30;
+            bool showImprovements = options.ContainsKey("i");
+
             if (options.ContainsKey("k"))
             {
                 pilot = new KeyboardPilot();
             }
             else
             {
-                BasicNetwork network = CreateNetwork();
-
                 IMLTrain train = new MLMethodGeneticAlgorithm(() =>
                 {
                     BasicNetwork result = CreateNetwork();
                     ((IMLResettable)result).Reset();
                     return result;
-                }, new PilotScorer(), 200);
-                
-                for (int epoch = 1; epoch <= 30; epoch++)
+                }, new PilotScorer(), population);
+
+                Console.WriteLine("Rozpoczynanie uczenia...");
+
+                double best = double.MinValue;
+                for (int epoch = 1; epoch <= epochs; epoch++)
                 {
                     train.Iteration();
                     Console.WriteLine(@"Epoch #" + epoch + @" Score:" + train.Error);
 
-                    if (Keyboard.GetState().IsKeyDown(Keys.Z))
-                        break;
+                    if(train.Error > best)
+                    {
+                        BasicNetwork network1 = (BasicNetwork)train.Method;
+                        pilot = new NeuralPilot(network1);
+
+                        if (showImprovements)
+                        {
+                            best = train.Error;
+                            var sim1 = new LanderSimulation(pilot);
+                            var game1 = new Game1(sim1);
+                            game1.Run();
+                        }
+                    }
                 }
+
+                BasicNetwork network = (BasicNetwork)train.Method;
                 pilot = new NeuralPilot(network);
             }
 
@@ -59,7 +77,7 @@ namespace enc.lander
         public static BasicNetwork CreateNetwork()
         {
             var pattern = new FeedForwardPattern {InputNeurons = 6};
-            pattern.AddHiddenLayer(10);
+            pattern.AddHiddenLayer(30);
             pattern.OutputNeurons = 3;
             pattern.ActivationFunction = new ActivationTANH();
             var network = (BasicNetwork) pattern.Generate();

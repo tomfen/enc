@@ -21,11 +21,19 @@ namespace enc.lander
             
             int steps = 0;
             int stepsLanded = 0;
-            
-            while (steps < 60 * 15 && stepsLanded < 60 && !sim.lander.IsCrashed())
+
+            float _x = 10000;
+            bool _xt = false;
+
+            while (steps < 60 * 15 && stepsLanded < 60)// && !sim.lander.IsCrashed())
             {
                 sim.Step();
                 steps++;
+
+                if (sim.lander.Vessel.WorldCenter.Y > 5)
+                    if (!_xt)
+                        _xt = true;
+                        _x = sim.lander.Vessel.WorldCenter.X;
 
                 if (sim.lander.IsLanded())
                     stepsLanded++;
@@ -36,9 +44,9 @@ namespace enc.lander
 
 
             return sim.lander.Vessel.WorldCenter.Y < 10 ?
-                sim.lander.IsCrashed() ?
-                    -100000 + steps :
-                    -sim.lander.damage - steps :
+                //sim.lander.IsCrashed() ?
+                    //-100000 + steps :
+                    -sim.lander.damage /*-Math.Abs(_x + 4.0f)*100*/ -Math.Abs(sim.lander.Vessel.WorldCenter.X+4.0f)*100:
                 float.MinValue;
 
         }

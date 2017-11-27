@@ -67,8 +67,8 @@ namespace enc.lander
             JointRight.DampingRatio = 30;
             JointRight.Breakpoint = 15;
 
-            JointLeft.Broke += (J, F) => { LeftLegBroken = true; damage += 1000; };
-            JointRight.Broke += (J, F) => { RightLegBroken = true; damage += 1000; };
+            JointLeft.Broke += (J, F) => { LeftLegBroken = true; damage += 100; };
+            JointRight.Broke += (J, F) => { RightLegBroken = true; damage += 100; };
             Vessel.OnCollision += (me, hit, contact) =>
             {
                 var points = contact.Manifold.Points;

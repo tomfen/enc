@@ -48,11 +48,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Benchmarks\ActivationBenchmark.cs" />
+    <Compile Include="Benchmarks\BatchSingle.cs" />
+    <Compile Include="Benchmarks\BatchTest.cs" />
+    <Compile Include="Utils\CSVWriter.cs" />
     <Compile Include="Evaluation.cs" />
     <Compile Include="ExperimentOptions.cs" />
     <Compile Include="lander\Game1.cs" />
     <Compile Include="IExperiment.cs" />
-    <Compile Include="ImageUtil.cs" />
+    <Compile Include="Utils\ImageUtil.cs" />
     <Compile Include="lander\LanderPilot.cs" />
     <Compile Include="lander\KeyboardPilot.cs" />
     <Compile Include="lander\Lander.cs" />
@@ -63,7 +66,7 @@
     <Compile Include="mnist\MatDataSet.cs" />
     <Compile Include="mnist\MnistDemo.cs" />
     <Compile Include="mnist\MnistReader.cs" />
-    <Compile Include="NetworkUtil.cs" />
+    <Compile Include="Utils\NetworkUtil.cs" />
     <Compile Include="OneHotEncoder.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -110,7 +113,9 @@
       <Name>VelcroPhysics.MonoGame</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="network\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

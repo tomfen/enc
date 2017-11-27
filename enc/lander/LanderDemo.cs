@@ -52,13 +52,13 @@ namespace enc.lander
 
                     if(train.Error > best)
                     {
-                        BasicNetwork network1 = (BasicNetwork)train.Method;
-                        pilot = new NeuralPilot(network1);
-
+                        best = train.Error;
+                        
                         if (showImprovements)
                         {
-                            best = train.Error;
-                            var sim1 = new LanderSimulation(pilot);
+                            BasicNetwork network1 = (BasicNetwork)train.Method;
+                            var pilot1 = new NeuralPilot(network1);
+                            var sim1 = new LanderSimulation(pilot1);
                             var game1 = new Game1(sim1);
                             game1.Run();
                         }
@@ -77,7 +77,7 @@ namespace enc.lander
         public static BasicNetwork CreateNetwork()
         {
             var pattern = new FeedForwardPattern {InputNeurons = 6};
-            pattern.AddHiddenLayer(30);
+            pattern.AddHiddenLayer(20);
             pattern.OutputNeurons = 3;
             pattern.ActivationFunction = new ActivationTANH();
             var network = (BasicNetwork) pattern.Generate();

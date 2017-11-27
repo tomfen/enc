@@ -43,11 +43,11 @@ namespace enc.mnist
 
         public void Run(Dictionary<string, string> options)
         {
-            double[] _Y1 = MnistReader.ReadLabels(@"..\..\..\..\..\train-labels.idx1-ubyte");
-            double[] _Y2 = MnistReader.ReadLabels(@"..\..\..\..\..\t10k-labels.idx1-ubyte");
+            double[] _Y1 = MnistReader.ReadLabels(@"..\..\..\..\..\DataSets\train-labels.idx1-ubyte");
+            double[] _Y2 = MnistReader.ReadLabels(@"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte");
 
-            Mat[] X1 = MnistReader.ReadImages(@"..\..\..\..\..\train-images.idx3-ubyte");
-            Mat[] X2 = MnistReader.ReadImages(@"..\..\..\..\..\t10k-images.idx3-ubyte");
+            Mat[] X1 = MnistReader.ReadImages(@"..\..\..\..\..\DataSets\train-images.idx3-ubyte");
+            Mat[] X2 = MnistReader.ReadImages(@"..\..\..\..\..\DataSets\t10k-images.idx3-ubyte");
 
             for (int i = 60000 - 100; i < 60000; i++)
             {
@@ -55,51 +55,39 @@ namespace enc.mnist
                 ImageUtil.Deskew(X1[i]).SaveImage(@"..\..\..\..\..\TEST\" + i + "D.png");
             }
 
-            var Y1 = OneHotEncoder.transform(_Y1);
-            var Y2 = OneHotEncoder.transform(_Y2);
+            var Y1 = OneHotEncoder.Transform(_Y1);
+            var Y2 = OneHotEncoder.Transform(_Y2);
 
 
             BasicMLDataSet trainingSet = MatDataSet.Convert(X1, Y1);
             BasicMLDataSet validationSet = MatDataSet.Convert(X2, Y2);
 
-            Tuple<string, string>[] trainAlgs =
+            BasicNetwork network = new BasicNetwork();
+            network.AddLayer(new BasicLayer(null, true, 28 * 28));
+            network.AddLayer(new BasicLayer(new ActivationSigmoid(), true, 200));
+            network.AddLayer(new BasicLayer(new ActivationSigmoid(), false, 10));
+            network.Structure.FinalizeStructure();
+            network.Reset(1);
+
+            var train = new ResilientPropagation(network, trainingSet);
+            train.RType = RPROPType.iRPROPp;
+            train.BatchSize = 10;
+
+            int epoch = 1;
+            while (epoch <= 1)
             {
-                //Tuple.Create(MLTrainFactory.TypeBackprop, "LR=0.0006, MM=0.3"),
-                Tuple.Create(MLTrainFactory.TypeRPROP, ""),
-                //Tuple.Create(MLTrainFactory.TypeSCG, ""),
-                //Tuple.Create(MLTrainFactory.TypeQPROP, "LR=2.0"),
-                //Tuple.Create(MLTrainFactory.TypeManhattan, "LR=0.01"),
-            };
-
-            foreach (var trainAlg in trainAlgs)
-            {
-
-                BasicNetwork network = new BasicNetwork();
-                network.AddLayer(new BasicLayer(null, true, 28 * 28));
-                network.AddLayer(new BasicLayer(new ActivationSigmoid(), true, 100));
-                network.AddLayer(new BasicLayer(new ActivationSigmoid(), false, 10));
-                network.Structure.FinalizeStructure();
-                network.Reset(1);
-
-                var train = new MLTrainFactory().Create(network, trainingSet, trainAlg.Item1, trainAlg.Item2);
-
-                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss" + "| Start Error" + train.Error));
-                int epoch = 1;
-                while (epoch <= 10)
-                {
-                    train.Iteration();
-                    Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
-                }
-
-                train.FinishTraining();
-
-
-
-                Console.WriteLine(Evaluation.accuracy(network, validationSet));
-
-                //Encog.Persist.EncogDirectoryPersistence.SaveObject(new FileInfo("..\\NET"), network);
-
+                train.Iteration();
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
             }
+
+            train.FinishTraining();
+
+
+
+            Console.WriteLine(Evaluation.accuracy(network, validationSet));
+
+            //Encog.Persist.EncogDirectoryPersistence.SaveObject(new FileInfo("..\\NET"), network);
+
         }
     }
 

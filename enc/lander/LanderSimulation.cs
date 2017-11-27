@@ -25,16 +25,16 @@ namespace enc.lander
             world = new World(new Vector2(0, 9.8f));
 
             floor = BodyFactory.CreateEdge(world, new Vector2(-100, 9), new Vector2(100, 9));
-            lander = new Lander(world, new Vector2(0f, -5));
 
             this.pilot = pilot;
-            pilot.Lander = lander;
-            
+
+            Reset();
         }
         
         public void Reset()
         {
-            lander.Destroy();
+            if(lander != null)
+                lander.Destroy();
             lander = new Lander(world, new Vector2(0f, -5));
             pilot.Lander = lander;
         }

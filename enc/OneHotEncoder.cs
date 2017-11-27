@@ -8,7 +8,7 @@ namespace enc
 {
     class OneHotEncoder
     {
-        static public double[][] transform(double[] Y, double negative = 0, double positive = 1)
+        static public double[][] Transform(double[] Y, double negative = -1, double positive = 1)
         {
             int classes = 0;
             for (int i = 0; i < Y.Length; i++)

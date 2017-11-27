@@ -22,5 +22,54 @@ namespace enc
 
             return dict;
         }
+        
+        public static double getParameterDouble(Dictionary<string, string> options, string parameter, double def)
+        {
+            try
+            {
+                return double.Parse(options[parameter]);
+            }
+            catch
+            {
+                return def;
+            }
+        }
+
+        public static int getParameterInt(Dictionary<string, string> options, string parameter, int def)
+        {
+            try
+            {
+                return int.Parse(options[parameter]);
+            }
+            catch
+            {
+                return def;
+            }
+        }
+        
+        public static int[] getParameterIntArray(Dictionary<string, string> options, string parameter, int[] def)
+        {
+            try
+            {
+                return options[parameter].Trim().Split().Select(x => int.Parse(x))
+                    .ToArray();
+            }
+            catch
+            {
+                return def;
+            }
+        }
+
+        public static double[] getParameterDoubleArray(Dictionary<string, string> options, string parameter, double[] def)
+        {
+            try
+            {
+                return options[parameter].Split().Select(x => double.Parse(x)).ToArray();
+            }
+            catch
+            {
+                return def;
+            }
+        }
     }
 }

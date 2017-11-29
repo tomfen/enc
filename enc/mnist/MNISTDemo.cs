@@ -28,6 +28,9 @@ using Encog.ML.Data.Versatile;
 using Encog.Neural.Networks.Training.Propagation;
 using System.Runtime.InteropServices;
 using enc.mnist;
+using Encog.ML.Train.Strategy;
+using Encog.ML.Train.Strategy.End;
+using Encog.Neural.Error;
 
 namespace enc.mnist
 {
@@ -43,91 +46,63 @@ namespace enc.mnist
 
         public void Run(Dictionary<string, string> options)
         {
-            double[] _Y1 = MnistReader.ReadLabels(@"..\..\..\..\..\DataSets\train-labels.idx1-ubyte");
-            double[] _Y2 = MnistReader.ReadLabels(@"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte");
+            BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\..\DataSets\train-images.idx3-ubyte",
+                                                     @"..\..\..\..\..\DataSets\train-labels.idx1-ubyte", 0, 1);
+            BasicMLDataSet validationSet = LoadDataSet(@"..\..\..\..\..\DataSets\t10k-images.idx3-ubyte",
+                                                       @"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte", 0, 1);
 
-            Mat[] X1 = MnistReader.ReadImages(@"..\..\..\..\..\DataSets\train-images.idx3-ubyte");
-            Mat[] X2 = MnistReader.ReadImages(@"..\..\..\..\..\DataSets\t10k-images.idx3-ubyte");
+            int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
 
-            for (int i = 60000 - 100; i < 60000; i++)
+            BasicNetwork network = options.ContainsKey("l")?
+                (BasicNetwork)EncogDirectoryPersistence.LoadObject(new FileInfo(options["l"])):
+                CreateNetwork();
+
+            var train = new QuickPropagation(network, trainingSet)
             {
-                X1[i].SaveImage(@"..\..\..\..\..\TEST\" + i + ".png");
-                ImageUtil.Deskew(X1[i]).SaveImage(@"..\..\..\..\..\TEST\" + i + "D.png");
-            }
+                //RType = RPROPType.iRPROPp,
+                //ErrorFunction = new CrossEntropyErrorFunction(),
+                //BatchSize = 10000,
+            };
 
-            var Y1 = OneHotEncoder.Transform(_Y1);
-            var Y2 = OneHotEncoder.Transform(_Y2);
-
-
-            BasicMLDataSet trainingSet = MatDataSet.Convert(X1, Y1);
-            BasicMLDataSet validationSet = MatDataSet.Convert(X2, Y2);
-
-            BasicNetwork network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, true, 28 * 28));
-            network.AddLayer(new BasicLayer(new ActivationSigmoid(), true, 200));
-            network.AddLayer(new BasicLayer(new ActivationSigmoid(), false, 10));
-            network.Structure.FinalizeStructure();
-            network.Reset(1);
-
-            var train = new ResilientPropagation(network, trainingSet);
-            train.RType = RPROPType.iRPROPp;
-            train.BatchSize = 10;
+            var improvementStop = new StopTrainingStrategy(0.000001, 10);
+            var minutesStop = new EndMinutesStrategy(minutes);
+            train.AddStrategy(improvementStop);
+            train.AddStrategy(minutesStop);
 
             int epoch = 1;
-            while (epoch <= 1)
+            while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
             {
                 train.Iteration();
                 Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
             }
-
             train.FinishTraining();
-
-
-
+            
             Console.WriteLine(Evaluation.accuracy(network, validationSet));
 
-            //Encog.Persist.EncogDirectoryPersistence.SaveObject(new FileInfo("..\\NET"), network);
-
-        }
-    }
-
-    public static class Helpers
-    {
-        // Note this MODIFIES THE GIVEN ARRAY then returns a reference to the modified array.
-        public static byte[] Reverse(this byte[] b)
-        {
-            Array.Reverse(b);
-            return b;
+            if(options.ContainsKey("s"))
+                EncogDirectoryPersistence.SaveObject(new FileInfo(options["s"]), network);
         }
 
-        public static UInt16 ReadUInt16BE(this BinaryReader binRdr)
+        private BasicNetwork CreateNetwork()
         {
-            return BitConverter.ToUInt16(binRdr.ReadBytesRequired(sizeof(UInt16)).Reverse(), 0);
+            var network = new BasicNetwork();
+            network.AddLayer(new BasicLayer(null, true, 28 * 28));
+            network.AddLayer(new BasicLayer(new ActivationReLU(), true, 40));
+            network.AddLayer(new BasicLayer(new ActivationSoftMax(), false, 10));
+            network.Structure.FinalizeStructure();
+            network.Reset();
+
+            return network;
         }
 
-        public static Int16 ReadInt16BE(this BinaryReader binRdr)
+        private BasicMLDataSet LoadDataSet(string img, string labels, int low=-1, int high=1)
         {
-            return BitConverter.ToInt16(binRdr.ReadBytesRequired(sizeof(Int16)).Reverse(), 0);
-        }
+            Mat[] X = MnistReader.ReadImages(img);
 
-        public static UInt32 ReadUInt32BE(this BinaryReader binRdr)
-        {
-            return BitConverter.ToUInt32(binRdr.ReadBytesRequired(sizeof(UInt32)).Reverse(), 0);
-        }
+            double[] _Y = MnistReader.ReadLabels(labels);
+            var Y = OneHotEncoder.Transform(_Y, low, high);
 
-        public static Int32 ReadInt32BE(this BinaryReader binRdr)
-        {
-            return BitConverter.ToInt32(binRdr.ReadBytesRequired(sizeof(Int32)).Reverse(), 0);
-        }
-
-        public static byte[] ReadBytesRequired(this BinaryReader binRdr, int byteCount)
-        {
-            var result = binRdr.ReadBytes(byteCount);
-
-            if (result.Length != byteCount)
-                throw new EndOfStreamException(string.Format("{0} bytes required from stream, but only {1} returned.", byteCount, result.Length));
-
-            return result;
+            return MatDataSet.Convert(X, Y);
         }
     }
 }

@@ -37,7 +37,7 @@ namespace enc
                         if (com.Split('-')[0].Trim() == e.Command)
                             e.Run(options);
                 }
-            } while (com != "e");
+            } while (com != "exit");
         }
     }
 }

@@ -40,7 +40,7 @@ for doc in reuters.fileids():
         test_ids.append(doc)
         test_cat.append(set(reuters.categories(doc)).intersection(classes))
 
-vectorizer = TfidfVectorizer(max_features=5000, tokenizer=tokenize, use_idf=False, norm='l1')
+vectorizer = TfidfVectorizer(max_features=500, tokenizer=tokenize, use_idf=False, norm='l1')
 label_binarizer = MultiLabelBinarizer(classes=classes)
 
 vectorised_train_documents = vectorizer.fit_transform(train)
@@ -54,11 +54,11 @@ binarized_test_labels[binarized_test_labels == 0] = -1
 
 dftrain = pandas.DataFrame(vectorised_train_documents.todense(), index=train_ids, columns=vectorizer.vocabulary_)
 dftrainlabels = pandas.DataFrame(binarized_train_labels, index=train_ids, columns=classes)
-dftrain.join(dftrainlabels, rsuffix="_cat").to_csv('train.csv', header=False, index=False)
+dftrain.join(dftrainlabels, rsuffix="_cat").to_csv('train.csv', header=True, index=False)
 
 dftest = pandas.DataFrame(vectorised_test_documents.todense(), index=test_ids, columns=vectorizer.vocabulary_)
 dftestlabels = pandas.DataFrame(binarized_test_labels, index=test_ids,columns=classes)
-dftest.join(dftestlabels, rsuffix="_cat").to_csv('test.csv', header=False, index=False)
+dftest.join(dftestlabels, rsuffix="_cat").to_csv('test.csv', header=True, index=False)
 
 # svm = OneVsRestClassifier(SVC(C=1000))
 # svm.fit(vectorised_train_documents, binarized_train_labels)

@@ -1,9 +1,6 @@
 ﻿using OpenCvSharp;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace enc
 {
@@ -24,21 +21,44 @@ namespace enc
             return img.WarpAffine(M, new Size(width, height));
         }
 
-        static public void HOG(Mat img)
+        static public double[] HOGVector(Mat img)
         {
-            var hog = new HOGDescriptor(
+            HOGDescriptor hog = new HOGDescriptor(
                 new Size(28, 28), //winSize
                 new Size(14, 14), //blocksize
                 new Size(7, 7), //blockStride,
                 new Size(14, 14), //cellSize,
-                 9, //nbins,
-                  1, //derivAper,
-                 -1, //winSigma,
-                  0, //histogramNormType,
+                9, //nbins,
+                1, //derivAper,
+                -1, //winSigma,
+                0, //histogramNormType,
                 0.2, //L2HysThresh,
-                  true,//gammal correction,
-                  64//nlevels=64
-                  );//Use signed gradients
+                true,//gammal correction,
+                64);//nlevels=64
+
+            float[] vectorF = hog.Compute(img);
+
+            double[] ret = new double[vectorF.Length];
+            Array.Copy(vectorF, ret, vectorF.Length);
+
+            return ret;
+        }
+
+        static public double[] ImgVector(Mat img)
+        {
+            var floatMat = new Mat();
+            img.ConvertTo(floatMat, MatType.CV_64F);
+            floatMat /= 255;
+
+            int length = floatMat.Cols * floatMat.Rows * floatMat.Channels();
+
+            if (!floatMat.IsContinuous())
+                throw new Exception("Mat must be continuous");
+
+            var ret = new double[length];
+            Marshal.Copy(floatMat.Data, ret, 0, length);
+
+            return ret;
         }
     }
 }

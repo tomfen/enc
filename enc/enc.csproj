@@ -62,7 +62,7 @@
     <Compile Include="Benchmarks\ErrorSpaceVisualizer.Designer.cs">
       <DependentUpon>ErrorSpaceVisualizer.cs</DependentUpon>
     </Compile>
-    <Compile Include="mnist\Helpers.cs" />
+    <Compile Include="Utils\Helpers.cs" />
     <Compile Include="reuters\MultilabelErrorFunction.cs" />
     <Compile Include="Utils\CSVWriter.cs" />
     <Compile Include="Evaluation.cs" />
@@ -77,7 +77,6 @@
     <Compile Include="lander\LanderDemo.cs" />
     <Compile Include="lander\NeuralPilot.cs" />
     <Compile Include="lander\PilotScorer.cs" />
-    <Compile Include="mnist\MatDataSet.cs" />
     <Compile Include="mnist\MnistDemo.cs" />
     <Compile Include="mnist\MnistReader.cs" />
     <Compile Include="Utils\NetworkUtil.cs" />

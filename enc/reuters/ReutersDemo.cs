@@ -16,6 +16,9 @@ using Encog.Neural.RBF;
 using Encog.Neural.Rbf.Training;
 using Encog.Persist;
 using System.IO;
+using Encog.Neural.Networks.Training.Propagation.Quick;
+using Encog.Neural.Error;
+using Encog.ML.SVM;
 
 namespace enc.reuters
 {
@@ -36,11 +39,11 @@ namespace enc.reuters
             var format = new CSVFormat('.', ',');
             CSVMLDataSet trainingSet = new CSVMLDataSet(@"..\..\..\..\..\DataSets\train.csv", features, 10, true, format, false);
             CSVMLDataSet testSet = new CSVMLDataSet(@"..\..\..\..\..\DataSets\test.csv", features, 10, true, format, false);
-            
+
             BasicNetwork network = options.ContainsKey("l") ?
                 (BasicNetwork)EncogDirectoryPersistence.LoadObject(new FileInfo(options["l"])) :
                 CreateNetwork(features);
-
+            
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
 
             var train = new ResilientPropagation(network, trainingSet)
@@ -57,7 +60,7 @@ namespace enc.reuters
             
 
             int epoch = 1;
-            while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
+            //while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
             {
                 train.Iteration();
                 Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
@@ -73,8 +76,8 @@ namespace enc.reuters
         {
             BasicNetwork network = new BasicNetwork();
             network.AddLayer(new BasicLayer(null, true, features));
-            network.AddLayer(new BasicLayer(new ActivationElliottSymmetric(), true, 300));
-            network.AddLayer(new BasicLayer(new ActivationElliottSymmetric(), false, 10));
+            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 300));
+            network.AddLayer(new BasicLayer(new ActivationTANH(), false, 1));
             network.Structure.FinalizeStructure();
             network.Reset();
 

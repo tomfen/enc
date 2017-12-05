@@ -51,10 +51,8 @@ namespace enc.Benchmarks
             {
                 //new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType = RPROPType.RPROPp },
                 //new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType = RPROPType.iRPROPp },
-                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { BatchSize = 1 },
-                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { BatchSize = 10 },
-                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { BatchSize = 60 },
                 new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet),
+                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) {ErrorFunction=new reuters.MultilabelErrorFunction() },
             };
 
             double[,] results = new double[epochs + 1, algorithms.Length];

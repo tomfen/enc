@@ -48,10 +48,7 @@ namespace enc.mnist
 
             for (int i = 0; i < items; i++)
             {
-                var m = new Mat(28, 28, MatType.CV_8UC1, br.ReadBytes(28*28));
-                var n = new Mat();
-                m.ConvertTo(n, MatType.CV_64FC1);
-                ret[i] = n;
+                ret[i] = new Mat(28, 28, MatType.CV_8UC1, br.ReadBytes(28 * 28));
             }
 
             file.Close();

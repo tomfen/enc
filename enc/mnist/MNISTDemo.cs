@@ -47,19 +47,20 @@ namespace enc.mnist
         public void Run(Dictionary<string, string> options)
         {
             BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\..\DataSets\train-images.idx3-ubyte",
-                                                     @"..\..\..\..\..\DataSets\train-labels.idx1-ubyte", 0, 1);
+                                                     @"..\..\..\..\..\DataSets\train-labels.idx1-ubyte", low: 0, hog:true);
             BasicMLDataSet validationSet = LoadDataSet(@"..\..\..\..\..\DataSets\t10k-images.idx3-ubyte",
-                                                       @"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte", 0, 1);
+                                                       @"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte", low: 0, hog:true);
 
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
+            
 
             BasicNetwork network = options.ContainsKey("l")?
                 (BasicNetwork)EncogDirectoryPersistence.LoadObject(new FileInfo(options["l"])):
-                CreateNetwork();
+                CreateNetwork(trainingSet.InputSize);
 
-            var train = new QuickPropagation(network, trainingSet)
+            var train = new ResilientPropagation(network, trainingSet)
             {
-                //RType = RPROPType.iRPROPp,
+                RType = RPROPType.iRPROPp,
                 //ErrorFunction = new CrossEntropyErrorFunction(),
                 //BatchSize = 10000,
             };
@@ -83,11 +84,11 @@ namespace enc.mnist
                 EncogDirectoryPersistence.SaveObject(new FileInfo(options["s"]), network);
         }
 
-        private BasicNetwork CreateNetwork()
+        private BasicNetwork CreateNetwork(int features)
         {
             var network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, true, 28 * 28));
-            network.AddLayer(new BasicLayer(new ActivationReLU(), true, 40));
+            network.AddLayer(new BasicLayer(null, true, features));
+            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 100));
             network.AddLayer(new BasicLayer(new ActivationSoftMax(), false, 10));
             network.Structure.FinalizeStructure();
             network.Reset();
@@ -95,14 +96,34 @@ namespace enc.mnist
             return network;
         }
 
-        private BasicMLDataSet LoadDataSet(string img, string labels, int low=-1, int high=1)
+        private BasicMLDataSet LoadDataSet(string imgFile, string labelsFile, bool deskew = false, bool hog = false,
+            int low = -1, int high = 1)
         {
-            Mat[] X = MnistReader.ReadImages(img);
+            Mat[] images = MnistReader.ReadImages(imgFile);
 
-            double[] _Y = MnistReader.ReadLabels(labels);
-            var Y = OneHotEncoder.Transform(_Y, low, high);
+            double[] labels = MnistReader.ReadLabels(labelsFile);
+            var Y = OneHotEncoder.Transform(labels, low, high);
 
-            return MatDataSet.Convert(X, Y);
+            double[][] X = new double[images.Length][];
+
+            if (!hog)
+            {
+                for (int i = 0; i < images.Length; i++)
+                {
+                    Mat img = deskew ? ImageUtil.Deskew(images[i]) : images[i];
+
+                    X[i] = ImageUtil.ImgVector(img);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < images.Length; i++)
+                {
+                    X[i] = ImageUtil.HOGVector(images[i]);
+                }
+            }
+
+            return new BasicMLDataSet(X, Y);
         }
     }
 }

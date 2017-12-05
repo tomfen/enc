@@ -3,6 +3,7 @@ using Encog.ML.Data;
 using System;
 using Encog.ML.Data.Specific;
 using Encog.ML.Data.Basic;
+using Encog.ML;
 
 namespace enc{
 public class Evaluation
@@ -10,7 +11,7 @@ public class Evaluation
 
     
 
-    public static string F1(BasicNetwork network, IMLDataSet testSet)
+    public static string F1(IMLRegression network, IMLDataSet testSet)
     {
         double[] false_pos = new double[testSet.IdealSize];
         double[] false_neg = new double[testSet.IdealSize];

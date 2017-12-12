@@ -4,74 +4,81 @@ using System;
 using Encog.ML.Data.Specific;
 using Encog.ML.Data.Basic;
 using Encog.ML;
+using System.Linq;
 
-namespace enc{
-public class Evaluation
+namespace enc
 {
-
-    
-
-    public static string F1(IMLRegression network, IMLDataSet testSet)
+    public class Evaluation
     {
-        double[] false_pos = new double[testSet.IdealSize];
-        double[] false_neg = new double[testSet.IdealSize];
-        double[] true_pos = new double[testSet.IdealSize];
-        double[] true_neg = new double[testSet.IdealSize];
 
-        for (int i = 0; i < testSet.Count; i++)
+
+
+        public static string F1(IMLRegression network, IMLDataSet testSet)
         {
-            var comp = network.Compute(testSet[i].Input);
+            double[] false_pos = new double[testSet.IdealSize + 1];
+            double[] false_neg = new double[testSet.IdealSize + 1];
+            double[] true_pos = new double[testSet.IdealSize + 1];
+            double[] true_neg = new double[testSet.IdealSize + 1];
 
-            for (int j = 0; j < comp.Count; j++)
+            for (int i = 0; i < testSet.Count; i++)
             {
-                if(testSet[i].Ideal[j] > 0.0)
+                var comp = network.Compute(testSet[i].Input);
+
+                for (int j = 0; j < comp.Count; j++)
                 {
-                    if (comp[j] > 0.0)
-                        true_pos[j]++;
+                    if (testSet[i].Ideal[j] > 0.0)
+                    {
+                        if (comp[j] > 0.0)
+                            true_pos[j]++;
+                        else
+                            false_neg[j]++;
+                    }
                     else
-                        false_neg[j]++;
-                }
-                else
-                {
-                    if (comp[j] > 0.0)
-                       false_pos[j]++;
-                    else
-                       true_neg[j]++;
+                    {
+                        if (comp[j] > 0.0)
+                            false_pos[j]++;
+                        else
+                            true_neg[j]++;
+                    }
                 }
             }
-        }
-        
-        double[] recall = new double[testSet.IdealSize];
-        double[] precision = new double[testSet.IdealSize];
-        double[] f1 = new double[testSet.IdealSize];
 
-        for (int j = 0; j < testSet.IdealSize; j++)
+            double[] recall = new double[testSet.IdealSize+1];
+            double[] precision = new double[testSet.IdealSize+1];
+            double[] f1 = new double[testSet.IdealSize+1];
+
+            false_pos[testSet.IdealSize] = false_pos.Sum();
+            false_neg[testSet.IdealSize] = false_neg.Sum();
+            true_pos[testSet.IdealSize] = true_pos.Sum();
+            true_neg[testSet.IdealSize] = true_neg.Sum();
+
+            for (int j = 0; j < testSet.IdealSize + 1; j++)
+            {
+                recall[j] = (double)true_pos[j] / (true_pos[j] + false_pos[j]);
+                precision[j] = (double)true_pos[j] / (true_pos[j] + false_neg[j]);
+                f1[j] = 2.0 * (precision[j] * recall[j]) / +(precision[j] + recall[j]);
+                if (Double.IsNaN(f1[j])) f1[j] = 0;
+            }
+
+            return string.Join("\n", f1);
+
+        }
+
+        static public double Accuracy(BasicNetwork network, BasicMLDataSet validationSet)
         {
-            recall[j] = (double)true_pos[j] / (true_pos[j] + false_pos[j]);
-            precision[j] = (double)true_pos[j] / (true_pos[j] + false_neg[j]);
-            f1[j] = 2.0 * (precision[j] * recall[j]) / +(precision[j] + recall[j]);
-            if (Double.IsNaN(f1[j])) f1[j] = 0;
-        }
-        
-        return string.Join("\n", f1);
-        
-    }
+            double correct = 0;
+            double wrong = 0;
+            for (int i = 0; i < validationSet.Count; i++)
+            {
+                int win = network.Winner(validationSet[i].Input);
+                if (1.0 == validationSet[i].Ideal[win])
+                    correct += 1;
+                else
+                    wrong += 1;
+            }
 
-    static public double accuracy(BasicNetwork network, BasicMLDataSet validationSet)
-    {
-        double correct = 0;
-        double wrong = 0;
-        for (int i = 0; i < validationSet.Count; i++)
-        {
-            int win = network.Winner(validationSet[i].Input);
-            if (1.0 == validationSet[i].Ideal[win])
-                correct += 1;
-            else
-                wrong += 1;
+            return correct / (correct + wrong);
         }
-
-        return correct / (correct + wrong);
     }
-}
 
 }

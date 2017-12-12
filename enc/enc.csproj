@@ -62,6 +62,20 @@
     <Compile Include="Benchmarks\ErrorSpaceVisualizer.Designer.cs">
       <DependentUpon>ErrorSpaceVisualizer.cs</DependentUpon>
     </Compile>
+    <Compile Include="cifar\CifarDemo.cs" />
+    <Compile Include="cifar\CifarReader.cs" />
+    <Compile Include="LayerControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="LayerControl.Designer.cs">
+      <DependentUpon>LayerControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NetworkCreatorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NetworkCreatorForm.Designer.cs">
+      <DependentUpon>NetworkCreatorForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Utils\Helpers.cs" />
     <Compile Include="reuters\MultilabelErrorFunction.cs" />
     <Compile Include="Utils\CSVWriter.cs" />
@@ -85,6 +99,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="reuters\ReutersDemo.cs" />
     <Compile Include="Utils\Point.cs" />
+    <Compile Include="Utils\Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="MonoGame.Framework">
@@ -145,6 +160,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Benchmarks\ErrorSpaceVisualizer.resx">
       <DependentUpon>ErrorSpaceVisualizer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LayerControl.resx">
+      <DependentUpon>LayerControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NetworkCreatorForm.resx">
+      <DependentUpon>NetworkCreatorForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

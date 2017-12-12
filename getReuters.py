@@ -40,7 +40,7 @@ for doc in reuters.fileids():
         test_ids.append(doc)
         test_cat.append(set(reuters.categories(doc)).intersection(classes))
 
-vectorizer = TfidfVectorizer(max_features=500, tokenizer=tokenize, use_idf=False, norm='l1')
+vectorizer = TfidfVectorizer(max_features=10000, tokenizer=tokenize, use_idf=False, norm='l1')
 label_binarizer = MultiLabelBinarizer(classes=classes)
 
 vectorised_train_documents = vectorizer.fit_transform(train)

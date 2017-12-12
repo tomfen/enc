@@ -8,6 +8,7 @@ namespace enc
 {
     public static class Program
     {
+
         private static IEnumerable<IExperiment> examples;
 
         static public void WriteMenu()

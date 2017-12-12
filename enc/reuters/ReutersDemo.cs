@@ -34,7 +34,7 @@ namespace enc.reuters
 
         public void Run(Dictionary<string, string> options)
         {
-            int features = 500;
+            int features = 10000; //20708
 
             var format = new CSVFormat('.', ',');
             CSVMLDataSet trainingSet = new CSVMLDataSet(@"..\..\..\..\..\DataSets\train.csv", features, 10, true, format, false);
@@ -49,9 +49,9 @@ namespace enc.reuters
             var train = new ResilientPropagation(network, trainingSet)
             {
                 RType = RPROPType.iRPROPp,
-                //ErrorFunction = new MultilabelErrorFunction()
+                ErrorFunction = new CrossEntropyErrorFunction(),
+                L1 = 0.5,
             };
-
 
             var improvementStop = new StopTrainingStrategy(0.000001, 10);
             var minutesStop = new EndMinutesStrategy(minutes);
@@ -60,7 +60,7 @@ namespace enc.reuters
             
 
             int epoch = 1;
-            //while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
+            while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
             {
                 train.Iteration();
                 Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
@@ -75,9 +75,9 @@ namespace enc.reuters
         private BasicNetwork CreateNetwork(int features)
         {
             BasicNetwork network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, true, features));
-            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 300));
-            network.AddLayer(new BasicLayer(new ActivationTANH(), false, 1));
+            network.AddLayer(new BasicLayer(null, false, features));
+            network.AddLayer(new BasicLayer(new ActivationReLU(), true, 200));
+            network.AddLayer(new BasicLayer(new ActivationTANH(), false, 10));
             network.Structure.FinalizeStructure();
             network.Reset();
 

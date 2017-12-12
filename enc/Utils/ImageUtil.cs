@@ -21,21 +21,8 @@ namespace enc
             return img.WarpAffine(M, new Size(width, height));
         }
 
-        static public double[] HOGVector(Mat img)
+        static public double[] HOGVector(Mat img, HOGDescriptor hog)
         {
-            HOGDescriptor hog = new HOGDescriptor(
-                new Size(28, 28), //winSize
-                new Size(14, 14), //blocksize
-                new Size(7, 7), //blockStride,
-                new Size(14, 14), //cellSize,
-                9, //nbins,
-                1, //derivAper,
-                -1, //winSigma,
-                0, //histogramNormType,
-                0.2, //L2HysThresh,
-                true,//gammal correction,
-                64);//nlevels=64
-
             float[] vectorF = hog.Compute(img);
 
             double[] ret = new double[vectorF.Length];

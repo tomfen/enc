@@ -47,9 +47,9 @@ namespace enc.mnist
         public void Run(Dictionary<string, string> options)
         {
             BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\..\DataSets\train-images.idx3-ubyte",
-                                                     @"..\..\..\..\..\DataSets\train-labels.idx1-ubyte", low: 0, hog:true);
-            BasicMLDataSet validationSet = LoadDataSet(@"..\..\..\..\..\DataSets\t10k-images.idx3-ubyte",
-                                                       @"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte", low: 0, hog:true);
+                                                     @"..\..\..\..\..\DataSets\train-labels.idx1-ubyte", negative: 0, useHog:true, deskew:true);
+            BasicMLDataSet testSet = LoadDataSet(@"..\..\..\..\..\DataSets\t10k-images.idx3-ubyte",
+                                                       @"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte", negative: 0, useHog:true, deskew:true);
 
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
             
@@ -58,11 +58,10 @@ namespace enc.mnist
                 (BasicNetwork)EncogDirectoryPersistence.LoadObject(new FileInfo(options["l"])):
                 CreateNetwork(trainingSet.InputSize);
 
-            var train = new ResilientPropagation(network, trainingSet)
+            var train = new QuickPropagation(network, trainingSet)
             {
-                RType = RPROPType.iRPROPp,
+                //RType = RPROPType.iRPROPp,
                 //ErrorFunction = new CrossEntropyErrorFunction(),
-                //BatchSize = 10000,
             };
 
             var improvementStop = new StopTrainingStrategy(0.000001, 10);
@@ -78,8 +77,8 @@ namespace enc.mnist
             }
             train.FinishTraining();
             
-            Console.WriteLine(Evaluation.accuracy(network, validationSet));
-
+            Console.WriteLine(Evaluation.Accuracy(network, testSet));
+            
             if(options.ContainsKey("s"))
                 EncogDirectoryPersistence.SaveObject(new FileInfo(options["s"]), network);
         }
@@ -88,7 +87,8 @@ namespace enc.mnist
         {
             var network = new BasicNetwork();
             network.AddLayer(new BasicLayer(null, true, features));
-            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 100));
+            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 200));
+            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 40));
             network.AddLayer(new BasicLayer(new ActivationSoftMax(), false, 10));
             network.Structure.FinalizeStructure();
             network.Reset();
@@ -96,17 +96,17 @@ namespace enc.mnist
             return network;
         }
 
-        private BasicMLDataSet LoadDataSet(string imgFile, string labelsFile, bool deskew = false, bool hog = false,
-            int low = -1, int high = 1)
+        private BasicMLDataSet LoadDataSet(string imgFile, string labelsFile, bool deskew = false, bool useHog = false,
+            int negative = -1, int positive = 1)
         {
             Mat[] images = MnistReader.ReadImages(imgFile);
 
             double[] labels = MnistReader.ReadLabels(labelsFile);
-            var Y = OneHotEncoder.Transform(labels, low, high);
+            var Y = OneHotEncoder.Transform(labels, negative, positive);
 
             double[][] X = new double[images.Length][];
 
-            if (!hog)
+            if (!useHog)
             {
                 for (int i = 0; i < images.Length; i++)
                 {
@@ -117,9 +117,22 @@ namespace enc.mnist
             }
             else
             {
+                HOGDescriptor hog = new HOGDescriptor(
+                new OpenCvSharp.Size(28, 28), //winSize
+                new OpenCvSharp.Size(14, 14), //blocksize
+                new OpenCvSharp.Size(7, 7), //blockStride,
+                new OpenCvSharp.Size(14, 14), //cellSize,
+                                9, //nbins,
+                                1, //derivAper,
+                                -1, //winSigma,
+                                0, //histogramNormType,
+                                0.2, //L2HysThresh,
+                                true,//gammal correction,
+                                64);//nlevels=64
+
                 for (int i = 0; i < images.Length; i++)
                 {
-                    X[i] = ImageUtil.HOGVector(images[i]);
+                    X[i] = ImageUtil.HOGVector(images[i], hog);
                 }
             }
 

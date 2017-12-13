@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Reflection;
 using Encog.Engine.Network.Activation;
@@ -15,36 +9,53 @@ namespace enc
 {
     public partial class LayerControl : UserControl
     {
-        public LayerControl(bool biasEnabled, int? neurons)
+        public enum LayerType
+        {
+            Input,
+            Output,
+            Hidden,
+        }
+
+        public LayerControl(LayerType type, int? neurons)
         {
             InitializeComponent();
 
-            checkBox1.Enabled = biasEnabled;
-            if(neurons != null)
-            {
-                numericUpDown1.Value = (decimal)neurons;
-                numericUpDown1.Enabled = false;
-            }
-        }
-
-        private void LayerControl_Load(object sender, EventArgs e)
-        {
             Assembly assembly = Assembly.GetAssembly(typeof(IActivationFunction));
 
             var functions = from t in assembly.GetTypes()
-                   where t.GetInterfaces().Contains(typeof(IActivationFunction))
-                   select t.Name;
+                            where t.GetInterfaces().Contains(typeof(IActivationFunction))
+                            select t;
 
-            comboBox1.Items.AddRange(functions.ToArray());
+            var data = functions.Select(t => new {
+                Name = t.Name,
+                Value = Activator.CreateInstance(t),
+            }).ToList();
 
-            comboBox1.SelectedIndex = 0;
+            comboBox1.DataSource = data;
+            comboBox1.ValueMember = "Value";
+            comboBox1.DisplayMember = "Name";
+
             comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
+
+            if (type == LayerType.Input)
+            {
+                comboBox1.SelectedIndex = comboBox1.FindStringExact("ActivationLinear");
+                comboBox1.Enabled = false;
+                numericUpDown1.Value = (decimal)neurons;
+                numericUpDown1.Enabled = false;
+            }
+            else if(type == LayerType.Output)
+            {
+                numericUpDown1.Enabled = false;
+                numericUpDown1.Value = (decimal)neurons;
+                checkBox1.Enabled = false;
+                checkBox1.Checked = false;
+            }
         }
 
         internal ILayer CreateLayer()
         {
-            IActivationFunction activation = 
-                (IActivationFunction) Assembly.GetExecutingAssembly().CreateInstance((string)comboBox1.SelectedItem);
+            var activation = (IActivationFunction)comboBox1.SelectedValue;
             return new BasicLayer(activation, checkBox1.Checked, (int)numericUpDown1.Value);
         }
     }

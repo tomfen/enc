@@ -89,7 +89,6 @@
             this.MinimumSize = new System.Drawing.Size(300, 30);
             this.Name = "LayerControl";
             this.Size = new System.Drawing.Size(300, 30);
-            this.Load += new System.EventHandler(this.LayerControl_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

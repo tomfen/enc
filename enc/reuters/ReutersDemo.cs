@@ -19,6 +19,8 @@ using System.IO;
 using Encog.Neural.Networks.Training.Propagation.Quick;
 using Encog.Neural.Error;
 using Encog.ML.SVM;
+using enc.Utils;
+using Encog.Neural.Networks.Training.Propagation;
 
 namespace enc.reuters
 {
@@ -41,23 +43,26 @@ namespace enc.reuters
             CSVMLDataSet testSet = new CSVMLDataSet(@"..\..\..\..\..\DataSets\test.csv", features, 10, true, format, false);
 
             BasicNetwork network = options.ContainsKey("l") ?
-                (BasicNetwork)EncogDirectoryPersistence.LoadObject(new FileInfo(options["l"])) :
+                (BasicNetwork)WinPersistence.LoadSaved(options["l"]) :
                 CreateNetwork(features);
-            
+
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
 
-            var train = new ResilientPropagation(network, trainingSet)
-            {
-                RType = RPROPType.iRPROPp,
-                ErrorFunction = new CrossEntropyErrorFunction(),
-                L1 = 0.5,
-            };
+            Propagation train = options.ContainsKey("a") ?
+                (Propagation)new ResilientPropagation(network, trainingSet)
+                {
+                    RType = RPROPType.iRPROPp,
+                    ErrorFunction = new CrossEntropyErrorFunction(),
+                } :
+                new QuickPropagation(network, trainingSet);
+            Console.WriteLine(train);
+
 
             var improvementStop = new StopTrainingStrategy(0.000001, 10);
             var minutesStop = new EndMinutesStrategy(minutes);
             train.AddStrategy(improvementStop);
             train.AddStrategy(minutesStop);
-            
+
 
             int epoch = 1;
             while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
@@ -69,19 +74,14 @@ namespace enc.reuters
             Console.WriteLine(Evaluation.F1(network, testSet));
 
             if (options.ContainsKey("s"))
-                EncogDirectoryPersistence.SaveObject(new FileInfo(options["s"]), network);
+                WinPersistence.Save(network, options["s"]);
         }
 
         private BasicNetwork CreateNetwork(int features)
         {
-            BasicNetwork network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, false, features));
-            network.AddLayer(new BasicLayer(new ActivationReLU(), true, 200));
-            network.AddLayer(new BasicLayer(new ActivationTANH(), false, 10));
-            network.Structure.FinalizeStructure();
-            network.Reset();
-
-            return network;
+            var dialog = new NetworkCreatorForm(features, 10);
+            dialog.ShowDialog();
+            return dialog.network;
         }
     }
 }

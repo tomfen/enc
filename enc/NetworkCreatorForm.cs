@@ -19,13 +19,13 @@ namespace enc
         {
             InitializeComponent();
 
-            addLayerPanel(false, outputs);
-            addLayerPanel(true, inputs);
+            addLayerPanel(LayerControl.LayerType.Input, inputs);
+            addLayerPanel(LayerControl.LayerType.Output, outputs);
         }
 
-        private void addLayerPanel(bool biasEnabled, int? neurons)
+        private void addLayerPanel(LayerControl.LayerType type, int? neurons)
         {
-            var panel = new LayerControl(biasEnabled, neurons)
+            var panel = new LayerControl(type, neurons)
             {
                 Dock = DockStyle.Top,
             };
@@ -51,11 +51,12 @@ namespace enc
             }
 
             network.Structure.FinalizeStructure();
+            network.Reset();
         }
 
         private void buttonPlus_Click(object sender, EventArgs e)
         {
-            addLayerPanel(true, null);
+            addLayerPanel(LayerControl.LayerType.Hidden, null);
         }
 
         private void buttonMinus_Click(object sender, EventArgs e)

@@ -26,23 +26,25 @@ namespace enc.cifar
         public void Run(Dictionary<string, string> options)
         {
             string[] trainFiles = {
-                @"..\..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_1.bin",
-                @"..\..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_2.bin",
-                /*@"..\..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_3.bin",
-                @"..\..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_4.bin",
-                @"..\..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_5.bin",*/
+                @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_1.bin",
+                /*@"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_2.bin",
+                @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_3.bin",
+                @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_4.bin",
+                @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_5.bin",*/
             };
 
             string[] testFiles = {
-                @"..\..\..\..\..\DataSets\cifar-10-batches-bin\test_batch.bin",
+                @"..\..\..\..\DataSets\cifar-10-batches-bin\test_batch.bin",
             };
 
             BasicMLDataSet trainSet = LoadDataSet(trainFiles);
             BasicMLDataSet testSet = LoadDataSet(testFiles);
 
             var network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, true, 32*32*3));
-            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 300));
+            network.AddLayer(new BasicLayer(null, false, 32*32*3));
+            //network.AddLayer(new BasicLayer(new ActivationReLU(), true, 1000));
+            //network.AddLayer(new BasicLayer(new ActivationLinear(), true, 800));
+            network.AddLayer(new BasicLayer(new ActivationReLU(), true, 300));
             network.AddLayer(new BasicLayer(new ActivationSoftMax(), false, 10));
             network.Structure.FinalizeStructure();
             network.Reset();
@@ -66,28 +68,24 @@ namespace enc.cifar
 
         public BasicMLDataSet LoadDataSet(string[] filenames)
         {
-            double[] _Y;
-            Mat[] images;
-
             BasicMLDataSet ret = new BasicMLDataSet();
 
-            CifarReader.ReadImages(filenames, out _Y, out images);
-            double[][] Y = OneHotEncoder.Transform(_Y, 0, 1);
-
-            double[][] X = new double[images.Length][];
-
-            for (int i = 0; i < images.Length; i++)
+            foreach (string filename in filenames)
             {
-                var img = new Mat();
+                var ohe = new OneHotEncoder(10, 0, 1);
 
-                Cv2.CvtColor(images[i], img, ColorConversionCodes.BGR2HSV);
-                
+                foreach (Tuple<Mat, int> pair in new CifarIterator(filename))
+                {
+                    var img = new Mat();
+                    var encoded = ohe.Transform(pair.Item2);
 
+                    Cv2.CvtColor(pair.Item1, img, ColorConversionCodes.BGR2HSV);
 
-                ret.Add(new BasicMLDataPair(
-                    new BasicMLData(ImageUtil.ImgVector(img)),
-                    new BasicMLData(Y[i])
-                    ));
+                    ret.Add(new BasicMLDataPair(
+                        new BasicMLData(ImageUtil.ImgVector(img)),
+                        new BasicMLData(encoded)
+                        ));
+                }
             }
 
             return ret;

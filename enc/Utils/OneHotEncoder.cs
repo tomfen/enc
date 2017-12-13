@@ -8,6 +8,10 @@ namespace enc
 {
     class OneHotEncoder
     {
+        private int classes;
+        private double negative;
+        private double positive;
+
         static public double[][] Transform(double[] Y, double negative = -1, double positive = 1)
         {
             int classes = 0;
@@ -23,6 +27,23 @@ namespace enc
                 for (int j = 0; j < classes; j++)
                     ret[i][j] = j == Y[i] ? positive : negative;
             }
+
+            return ret;
+        }
+
+        public OneHotEncoder(int classes, double negative = -1, double positive = 1)
+        {
+            this.classes = classes;
+            this.negative = negative;
+            this.positive = positive;
+        }
+
+        public double[] Transform(double Y)
+        {
+            double[] ret = new double[classes];
+            
+            for (int j = 0; j < classes; j++)
+                ret[j] = j == Y ? positive : negative;
 
             return ret;
         }

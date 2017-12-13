@@ -31,6 +31,10 @@ using enc.mnist;
 using Encog.ML.Train.Strategy;
 using Encog.ML.Train.Strategy.End;
 using Encog.Neural.Error;
+using System.Windows.Forms;
+using enc.Utils;
+using Encog.ML.Factory.Train;
+using System.ComponentModel;
 
 namespace enc.mnist
 {
@@ -46,23 +50,26 @@ namespace enc.mnist
 
         public void Run(Dictionary<string, string> options)
         {
-            BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\..\DataSets\train-images.idx3-ubyte",
-                                                     @"..\..\..\..\..\DataSets\train-labels.idx1-ubyte", negative: 0, useHog:true, deskew:true);
-            BasicMLDataSet testSet = LoadDataSet(@"..\..\..\..\..\DataSets\t10k-images.idx3-ubyte",
-                                                       @"..\..\..\..\..\DataSets\t10k-labels.idx1-ubyte", negative: 0, useHog:true, deskew:true);
-
-            int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
+            BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\DataSets\train-images.idx3-ubyte",
+                                                     @"..\..\..\..\DataSets\train-labels.idx1-ubyte", negative: 0, useHog:true, deskew: false);
+            BasicMLDataSet testSet = LoadDataSet(@"..\..\..\..\DataSets\t10k-images.idx3-ubyte",
+                                                       @"..\..\..\..\DataSets\t10k-labels.idx1-ubyte", negative: 0, useHog:true, deskew: false);
             
+            int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
 
-            BasicNetwork network = options.ContainsKey("l")?
-                (BasicNetwork)EncogDirectoryPersistence.LoadObject(new FileInfo(options["l"])):
+
+            BasicNetwork network = options.ContainsKey("l") ?
+                (BasicNetwork)WinPersistence.LoadSaved(options["l"]):
                 CreateNetwork(trainingSet.InputSize);
 
-            var train = new QuickPropagation(network, trainingSet)
+            var train = new RPROPFactory().Create(network, trainingSet, "RTYPE=iRPROPp");
+
+            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(train))
             {
-                //RType = RPROPType.iRPROPp,
-                //ErrorFunction = new CrossEntropyErrorFunction(),
-            };
+                string name = descriptor.Name;
+                object value = descriptor.GetValue(train);
+                Console.WriteLine("{0}={1}", name, value);
+            }
 
             var improvementStop = new StopTrainingStrategy(0.000001, 10);
             var minutesStop = new EndMinutesStrategy(minutes);
@@ -78,22 +85,16 @@ namespace enc.mnist
             train.FinishTraining();
             
             Console.WriteLine(Evaluation.Accuracy(network, testSet));
-            
-            if(options.ContainsKey("s"))
-                EncogDirectoryPersistence.SaveObject(new FileInfo(options["s"]), network);
+
+            if (options.ContainsKey("s"))
+                WinPersistence.Save(network, options["s"]);
         }
 
         private BasicNetwork CreateNetwork(int features)
         {
-            var network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, true, features));
-            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 200));
-            network.AddLayer(new BasicLayer(new ActivationTANH(), true, 40));
-            network.AddLayer(new BasicLayer(new ActivationSoftMax(), false, 10));
-            network.Structure.FinalizeStructure();
-            network.Reset();
-
-            return network;
+            var dialog = new NetworkCreatorForm(features, 10);
+            dialog.ShowDialog();
+            return dialog.network;
         }
 
         private BasicMLDataSet LoadDataSet(string imgFile, string labelsFile, bool deskew = false, bool useHog = false,

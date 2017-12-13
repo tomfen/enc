@@ -15,10 +15,11 @@ namespace enc
         {
             foreach (IExperiment e in examples)
             {
-                Console.WriteLine(e.Command.PadRight(5) + " | " + e.Name);
+                Console.WriteLine(e.Command.PadRight(3) + " | " + e.Name);
             }
         }
 
+        [STAThread]
         static void Main(string[] args)
         {
             examples = from t in Assembly.GetExecutingAssembly().GetTypes()

@@ -5,14 +5,12 @@ using Encog.ML.Data.Specific;
 using Encog.ML.Data.Basic;
 using Encog.ML;
 using System.Linq;
+using Encog.Util;
 
 namespace enc
 {
     public class Evaluation
     {
-
-
-
         public static string F1(IMLRegression network, IMLDataSet testSet)
         {
             double[] false_pos = new double[testSet.IdealSize + 1];
@@ -64,14 +62,14 @@ namespace enc
 
         }
 
-        static public double Accuracy(BasicNetwork network, BasicMLDataSet validationSet)
+        static public double Accuracy(IMLRegression network, BasicMLDataSet validationSet)
         {
             double correct = 0;
             double wrong = 0;
             for (int i = 0; i < validationSet.Count; i++)
             {
-                int win = network.Winner(validationSet[i].Input);
-                if (1.0 == validationSet[i].Ideal[win])
+                if (EngineArray.MaxIndex(network.Compute(validationSet[i].Input)) ==
+                    EngineArray.MaxIndex(validationSet[i].Ideal))
                     correct += 1;
                 else
                     wrong += 1;

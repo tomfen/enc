@@ -84,6 +84,7 @@
     </Compile>
     <Compile Include="cifar\CifarDemo.cs" />
     <Compile Include="cifar\CifarReader.cs" />
+    <Compile Include="lander\ConvertUnits.cs" />
     <Compile Include="LayerControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -155,7 +156,6 @@
   <ItemGroup>
     <MonoGameContentReference Include="Content\Content.mgcb" />
     <None Include="app.manifest" />
-    <None Include="getReuters.py" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

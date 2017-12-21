@@ -21,6 +21,10 @@ using Encog.Neural.Error;
 using Encog.ML.SVM;
 using enc.Utils;
 using Encog.Neural.Networks.Training.Propagation;
+using Encog.Neural.Networks.Training.Propagation.Back;
+using Encog.MathUtil.RBF;
+using Encog.Neural.Networks.Training.Propagation.SGD;
+using Encog.Neural.Networks.Training.Propagation.SGD.Update;
 
 namespace enc.reuters
 {
@@ -36,11 +40,15 @@ namespace enc.reuters
 
         public void Run(Dictionary<string, string> options)
         {
-            int features = 10000; //20708
+            string trainingSetFilename = @"..\..\..\..\DataSets\train.csv";
+            string testSetFilename = @"..\..\..\..\DataSets\test.csv";
+
+            int features = NumberOfFeatures(trainingSetFilename);
+            Console.WriteLine(String.Format("Wczytano {0} cech.", features));
 
             var format = new CSVFormat('.', ',');
-            CSVMLDataSet trainingSet = new CSVMLDataSet(@"..\..\..\..\..\DataSets\train.csv", features, 10, true, format, false);
-            CSVMLDataSet testSet = new CSVMLDataSet(@"..\..\..\..\..\DataSets\test.csv", features, 10, true, format, false);
+            CSVMLDataSet trainingSet = new CSVMLDataSet(trainingSetFilename, features, 10, true, format, false);
+            CSVMLDataSet testSet = new CSVMLDataSet(testSetFilename, features, 10, true, format, false);
 
             BasicNetwork network = options.ContainsKey("l") ?
                 (BasicNetwork)WinPersistence.LoadSaved(options["l"]) :
@@ -48,14 +56,11 @@ namespace enc.reuters
 
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
 
-            Propagation train = options.ContainsKey("a") ?
-                (Propagation)new ResilientPropagation(network, trainingSet)
+            var train = new ResilientPropagation(network, trainingSet)
                 {
                     RType = RPROPType.iRPROPp,
                     ErrorFunction = new CrossEntropyErrorFunction(),
-                } :
-                new QuickPropagation(network, trainingSet);
-            Console.WriteLine(train);
+                };
 
 
             var improvementStop = new StopTrainingStrategy(0.000001, 10);
@@ -82,6 +87,11 @@ namespace enc.reuters
             var dialog = new NetworkCreatorForm(features, 10);
             dialog.ShowDialog();
             return dialog.network;
+        }
+
+        private int NumberOfFeatures(string filename)
+        {
+            return File.ReadLines(filename).First().Split(',').Length - 10;
         }
     }
 }

@@ -1,23 +1,50 @@
+import getopt
 import pandas
-from nltk import word_tokenize, PorterStemmer, re
+import sys
+from nltk import word_tokenize, re, SnowballStemmer
 from nltk.corpus import reuters, stopwords
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.preprocessing import MultiLabelBinarizer, MinMaxScaler
 from sklearn.svm import SVC
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import f1_score
 
-cachedStopWords = stopwords.words("english")
+
+# Defaults
+use_lsa = False
+use_idf = False
+max_features = None
+components = 100
+out_dir = '\\'
+
+opts, args = getopt.getopt(sys.argv[1:], 'f:c:', ['lsa', 'idf', 'out='])
+for o, a in opts:
+    if o == "-f":
+        max_features = int(a)
+    elif o == '-c':
+        components = int(a)
+    elif o == '--lsa':
+        use_lsa = True
+    elif o == '--idf':
+        use_idf = True
+    elif o == '--out':
+        out_dir = a
+    else:
+        assert False, "unhandled option"
+		
+cachedStopWords = stopwords.words('english')
+
 
 def tokenize(text):
     min_length = 3
+    stemmer = SnowballStemmer('english')
 
     words = word_tokenize(text)
-    words = [word.lower() for word in words if word not in cachedStopWords]
-    tokens = (list(map(lambda token: PorterStemmer().stem(token), words)))
+    stems = [stemmer.stem(word) for word in words if word not in cachedStopWords]
 
     p = re.compile('[a-zA-Z]+')
-    filtered_tokens = list(filter(lambda token: p.match(token) and len(token) >= min_length, tokens))
+    filtered_tokens = list(filter(lambda token: p.match(token) and len(token) >= min_length, stems))
 
     return filtered_tokens
 
@@ -40,7 +67,7 @@ for doc in reuters.fileids():
         test_ids.append(doc)
         test_cat.append(set(reuters.categories(doc)).intersection(classes))
 
-vectorizer = TfidfVectorizer(max_features=10000, tokenizer=tokenize, use_idf=False, norm='l1')
+vectorizer = TfidfVectorizer(max_features=max_features, tokenizer=tokenize, use_idf=use_idf, norm='l1')
 label_binarizer = MultiLabelBinarizer(classes=classes)
 
 vectorised_train_documents = vectorizer.fit_transform(train)
@@ -52,17 +79,36 @@ binarized_test_labels = label_binarizer.transform(test_cat)
 binarized_train_labels[binarized_train_labels == 0] = -1
 binarized_test_labels[binarized_test_labels == 0] = -1
 
-dftrain = pandas.DataFrame(vectorised_train_documents.todense(), index=train_ids, columns=vectorizer.vocabulary_)
-dftrainlabels = pandas.DataFrame(binarized_train_labels, index=train_ids, columns=classes)
-dftrain.join(dftrainlabels, rsuffix="_cat").to_csv('train.csv', header=True, index=False)
+if use_lsa:
+    lsa = TruncatedSVD(components)
+    vectorised_train_documents = lsa.fit_transform(vectorised_train_documents)
+    vectorised_test_documents = lsa.transform(vectorised_test_documents)
+    feature_names = ['component {}'.format(x) for x in range(lsa.n_components)]
+else:
+    vectorised_train_documents = vectorised_train_documents.todense()
+    vectorised_test_documents = vectorised_test_documents.todense()
+    feature_names = vectorizer.vocabulary_
 
-dftest = pandas.DataFrame(vectorised_test_documents.todense(), index=test_ids, columns=vectorizer.vocabulary_)
-dftestlabels = pandas.DataFrame(binarized_test_labels, index=test_ids,columns=classes)
-dftest.join(dftestlabels, rsuffix="_cat").to_csv('test.csv', header=True, index=False)
+print('Wczytano {} cech.'.format(len(feature_names)))
+
+# Normalizacja cech
+scaler = MinMaxScaler(feature_range=(-1, 1), copy=False)
+scaler.fit_transform(vectorised_train_documents)
+scaler.transform(vectorised_test_documents)
+
+# Zapisywanie danych
+print("Zapisywanie zbioru treningowego")
+DFTrain = pandas.DataFrame(vectorised_train_documents, index=train_ids, columns=feature_names)
+DFTrainLabels = pandas.DataFrame(binarized_train_labels, index=train_ids, columns=classes)
+DFTrain.join(DFTrainLabels, rsuffix="_cat").to_csv('train.csv', header=True, index=False)
+
+print("Zapisywanie zbioru testowego")
+DFTest = pandas.DataFrame(vectorised_test_documents, index=test_ids, columns=feature_names)
+DFTestLabels = pandas.DataFrame(binarized_test_labels, index=test_ids, columns=classes)
+DFTest.join(DFTestLabels, rsuffix="_cat").to_csv('test.csv', header=True, index=False)
 
 # svm = OneVsRestClassifier(SVC(C=1000))
 # svm.fit(vectorised_train_documents, binarized_train_labels)
-# YY = svm.predict(vectorised_test_documents)
-# f1_micro = f1_score(binarized_test_labels, YY, average='micro')
+# predicted_labels = svm.predict(vectorised_test_documents)
+# f1_micro = f1_score(binarized_test_labels, predicted_labels, average='micro')
 # print(f1_micro)
-

@@ -4,6 +4,7 @@ using Encog.Neural.Networks;
 using Microsoft.Xna.Framework;
 using System;
 using VelcroPhysics.Dynamics;
+using Encog.Neural.NEAT;
 
 namespace enc.lander
 {
@@ -16,7 +17,7 @@ namespace enc.lander
         
         public double CalculateScore(IMLMethod network)
         {
-            var pilot = new NeuralPilot((BasicNetwork)network);
+            var pilot = new NeuralPilot((NEATNetwork)network);
             var sim = new LanderSimulation(pilot);
             
             int steps = 0;
@@ -44,9 +45,9 @@ namespace enc.lander
 
 
             return sim.lander.Vessel.WorldCenter.Y < 10 ?
-                //sim.lander.IsCrashed() ?
-                    //-100000 + steps :
-                    -sim.lander.damage /*-Math.Abs(_x + 4.0f)*100*/ -Math.Abs(sim.lander.Vessel.WorldCenter.X+4.0f)*100:
+                sim.lander.IsCrashed() ?
+                    -100000 + steps :
+                    -sim.lander.damage /*-Math.Abs(_x + 4.0f)*100*/:
                 float.MinValue;
 
         }

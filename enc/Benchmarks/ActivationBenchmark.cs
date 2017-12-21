@@ -14,7 +14,7 @@ namespace enc
     {
         public string Command => "a";
 
-        public string Description => "Testuje czas obliczania funckji aktywacji";
+        public string Description => "Testuje czas obliczania funkcji aktywacji";
 
         public string Options => "";
 
@@ -35,25 +35,26 @@ namespace enc
 
         public void Run(Dictionary<string, string> options)
         {
-            int size = 20000000;
-            double maxabs = -10.0;
+            int size = ExperimentOptions.getParameterInt(options, "a", 20000000);
+            double maxabs = ExperimentOptions.getParameterDouble(options, "m", -50.0);
+            
+            var functions = GetAllActivationFuns();
 
-            if (options.ContainsKey("a"))
-                size = int.Parse(options["a"]);
-
-            if (options.ContainsKey("v"))
-                maxabs = double.Parse(options["v"]);
-
-            var functions = getAllActivationFuns();
-
-            List<String> results = new List<string>();
-            results.Add("Funkcja;Wartość;Pochodna");
+            List<String> results = new List<string>
+            {
+                "Funkcja;Wartość;Pochodna"
+            };
 
             // Test
             Console.WriteLine("Funkcja                            Wartość   Pochodna");
             foreach (var fun in functions)
             {
-                double[] arr = RandomArray(size, -maxabs, maxabs, 1);
+                // Na wszelki wypadek
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                double[] after = RandomArray(size, -maxabs, maxabs, 1);
+                double[] before = RandomArray(size, -maxabs, maxabs, 1);
                 var stopwatch = new Stopwatch();
 
                 string functionName = fun.GetType().Name;
@@ -64,7 +65,7 @@ namespace enc
 
                 // Aktywacja
                 stopwatch.Start();
-                fun.ActivationFunction(arr, 0, arr.Length);
+                fun.ActivationFunction(after, 0, after.Length);
                 stopwatch.Stop();
 
                 activationElapsed = stopwatch.Elapsed.TotalMilliseconds;
@@ -74,8 +75,8 @@ namespace enc
                 if (fun.HasDerivative)
                 {
                     stopwatch.Restart();
-                    for (int j = 0; j < arr.Length; j++)
-                        fun.DerivativeFunction(arr[j], 0);
+                    for (int j = 0; j < after.Length; j++)
+                        fun.DerivativeFunction(before[j], after[j]);
                     stopwatch.Stop();
 
                     derivativeElapsed = stopwatch.Elapsed.TotalMilliseconds;
@@ -96,7 +97,7 @@ namespace enc
             }
         }
 
-        IEnumerable<IActivationFunction> getAllActivationFuns()
+        IEnumerable<IActivationFunction> GetAllActivationFuns()
         {
             Assembly assembly = Assembly.GetAssembly(typeof(IActivationFunction));
 

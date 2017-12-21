@@ -35,6 +35,9 @@ using System.Windows.Forms;
 using enc.Utils;
 using Encog.ML.Factory.Train;
 using System.ComponentModel;
+using Encog.Neural.Networks.Training.Propagation.SGD.Update;
+using Encog.Neural.PNN;
+using Encog.Neural.Networks.Training.PNN;
 
 namespace enc.mnist
 {
@@ -50,27 +53,28 @@ namespace enc.mnist
 
         public void Run(Dictionary<string, string> options)
         {
-            BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\DataSets\train-images.idx3-ubyte",
-                                                     @"..\..\..\..\DataSets\train-labels.idx1-ubyte", negative: 0, useHog:true, deskew: false);
-            BasicMLDataSet testSet = LoadDataSet(@"..\..\..\..\DataSets\t10k-images.idx3-ubyte",
-                                                       @"..\..\..\..\DataSets\t10k-labels.idx1-ubyte", negative: 0, useHog:true, deskew: false);
-            
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
+            bool deskew = options.ContainsKey("deskew");
+            bool useHog = options.ContainsKey("hog");
+
+            BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\DataSets\train-images.idx3-ubyte",
+                                                     @"..\..\..\..\DataSets\train-labels.idx1-ubyte", deskew, useHog, 0, 1);
+            BasicMLDataSet testSet = LoadDataSet(@"..\..\..\..\DataSets\t10k-images.idx3-ubyte",
+                                                       @"..\..\..\..\DataSets\t10k-labels.idx1-ubyte", deskew, useHog, 0, 1);
 
 
             BasicNetwork network = options.ContainsKey("l") ?
                 (BasicNetwork)WinPersistence.LoadSaved(options["l"]):
                 CreateNetwork(trainingSet.InputSize);
 
-            var train = new RPROPFactory().Create(network, trainingSet, "RTYPE=iRPROPp");
-
-            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(train))
-            {
-                string name = descriptor.Name;
-                object value = descriptor.GetValue(train);
-                Console.WriteLine("{0}={1}", name, value);
-            }
-
+            var train = /*new ResilientPropagation(network, trainingSet)
+                {
+                    RType = RPROPType.iRPROPp,
+                    L1 = 0.000001,
+                    FixFlatSpot = false,
+                    ErrorFunction = new CrossEntropyErrorFunction(),
+                };*/ new StochasticGradientDescent(network, trainingSet) { BatchSize = 1000 };
+            
             var improvementStop = new StopTrainingStrategy(0.000001, 10);
             var minutesStop = new EndMinutesStrategy(minutes);
             train.AddStrategy(improvementStop);

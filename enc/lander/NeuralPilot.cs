@@ -1,5 +1,6 @@
 ﻿using Encog.ML.Data;
 using Encog.ML.Data.Basic;
+using Encog.Neural.NEAT;
 using Encog.Neural.Networks;
 using Encog.Util.Arrayutil;
 using System;
@@ -14,18 +15,18 @@ namespace enc.lander
 {
     class NeuralPilot : LanderPilot
     {
-        BasicNetwork network;
+        NEATNetwork network;
 
-        NormalizedField Altitude = new NormalizedField(NormalizationAction.Normalize, "alt", 0, -10, 0.9, 0.9);
+        NormalizedField Altitude = new NormalizedField(NormalizationAction.Normalize, "alt", 0, -10, 0.9, -0.9);
 
-        public NeuralPilot(BasicNetwork network) : base()
+        public NeuralPilot(NEATNetwork network) : base()
         {
             this.network = network;
         }
         
         public override void Process()
         {
-            var input = new BasicMLData(6);
+            var input = new BasicMLData(7);
             input[0] = Lander.Vessel.LinearVelocity.Y;
             input[1] = Lander.Vessel.LinearVelocity.X;
 
@@ -34,6 +35,8 @@ namespace enc.lander
 
             input[4] = Lander.Vessel.Rotation;
             input[5] = Lander.Vessel.AngularVelocity;
+
+            input[6] = Lander.IsLanded() ? 1 : -1;
 
             IMLData output = network.Compute(input);
 

@@ -1,9 +1,12 @@
 using Encog;
 using Encog.Engine.Network.Activation;
 using Encog.ML;
+using Encog.ML.EA.Train;
 using Encog.ML.Genetic;
 using Encog.ML.Train;
+using Encog.Neural.NEAT;
 using Encog.Neural.Networks;
+using Encog.Neural.Networks.Training;
 using Encog.Neural.Pattern;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -35,13 +38,15 @@ namespace enc.lander
             }
             else
             {
-                IMLTrain train = new MLMethodGeneticAlgorithm(() =>
-                {
-                    BasicNetwork result = CreateNetwork();
-                    ((IMLResettable)result).Reset();
-                    return result;
-                }, new PilotScorer(), population);
-
+                NEATPopulation pop = new NEATPopulation(6, 3, population);
+                pop.Reset();
+                pop.InitialConnectionDensity = 1.0; // not required, but speeds processing.
+                ICalculateScore score = new PilotScorer();
+                // train the neural network
+                TrainEA train = NEATUtil.ConstructNEATTrainer(pop, score);
+                
+                NEATNetwork network = (NEATNetwork)train.CODEC.Decode(train.BestGenome);
+                
                 Console.WriteLine("Rozpoczynanie uczenia...");
 
                 double best = double.MinValue;
@@ -56,7 +61,7 @@ namespace enc.lander
                         
                         if (showImprovements)
                         {
-                            BasicNetwork network1 = (BasicNetwork)train.Method;
+                            NEATNetwork network1 = ((NEATPopulation)train.Method).BestNetwork;
                             var pilot1 = new NeuralPilot(network1);
                             var sim1 = new LanderSimulation(pilot1);
                             var game1 = new Game1(sim1);
@@ -64,9 +69,8 @@ namespace enc.lander
                         }
                     }
                 }
-
-                BasicNetwork network = (BasicNetwork)train.Method;
-                pilot = new NeuralPilot(network);
+                
+                pilot = new NeuralPilot(((NEATPopulation)train.Method).BestNetwork);
             }
 
             var sim = new LanderSimulation(pilot);

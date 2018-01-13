@@ -1,43 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using Encog.Engine.Network.Activation;
 using Encog.ML.Data.Basic;
-using Encog.Neural.Data.Basic;
 using Encog.Neural.Networks;
-using Encog.Neural.Networks.Layers;
-using Encog.Neural.Networks.Training;
-using Encog.Neural.Networks.Training.Propagation.Back;
-using Encog.Neural.Networks.Training.Propagation.Manhattan;
-using Encog.Neural.Networks.Training.Propagation.Quick;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
-using Encog.Neural.Networks.Training.Propagation.SCG;
-using Encog.Neural.Networks.Training.Propagation.SGD;
-using Encog.Neural.NeuralData;
-using Encog.Persist;
 using OpenCvSharp;
-using OpenCvSharp.Extensions;
-using System.Drawing;
-using Encog.Util.Arrayutil;
-using Encog.ML.Factory;
-using Encog.Util.Normalize;
-using Encog.ML.Data.Versatile;
-using Encog.Neural.Networks.Training.Propagation;
-using System.Runtime.InteropServices;
-using enc.mnist;
 using Encog.ML.Train.Strategy;
 using Encog.ML.Train.Strategy.End;
 using Encog.Neural.Error;
-using System.Windows.Forms;
 using enc.Utils;
-using Encog.ML.Factory.Train;
-using System.ComponentModel;
-using Encog.Neural.Networks.Training.Propagation.SGD.Update;
-using Encog.Neural.PNN;
-using Encog.Neural.Networks.Training.PNN;
+using Encog.Neural.Networks.Training.Propagation.Back;
 
 namespace enc.mnist
 {
@@ -47,8 +18,6 @@ namespace enc.mnist
 
         public string Description => "";
 
-        public string Options => "";
-
         public string Name => "Klasyfikacja zbioru MNIST";
 
         public void Run(Dictionary<string, string> options)
@@ -56,39 +25,52 @@ namespace enc.mnist
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
             bool deskew = options.ContainsKey("deskew");
             bool useHog = options.ContainsKey("hog");
+            double l1 = ExperimentOptions.getParameterDouble(options, "l1", 0);
+            double l2 = ExperimentOptions.getParameterDouble(options, "l2", 0);
 
             BasicMLDataSet trainingSet = LoadDataSet(@"..\..\..\..\DataSets\train-images.idx3-ubyte",
-                                                     @"..\..\..\..\DataSets\train-labels.idx1-ubyte", deskew, useHog, 0, 1);
+                                                     @"..\..\..\..\DataSets\train-labels.idx1-ubyte", 0, 50000,
+                                                     deskew, useHog, 0, 1);
+
+            BasicMLDataSet validationSet = LoadDataSet(@"..\..\..\..\DataSets\train-images.idx3-ubyte",
+                                                     @"..\..\..\..\DataSets\train-labels.idx1-ubyte", 50000, 10000,
+                                                     deskew, useHog, 0, 1);
+
             BasicMLDataSet testSet = LoadDataSet(@"..\..\..\..\DataSets\t10k-images.idx3-ubyte",
-                                                       @"..\..\..\..\DataSets\t10k-labels.idx1-ubyte", deskew, useHog, 0, 1);
+                                                       @"..\..\..\..\DataSets\t10k-labels.idx1-ubyte", 0, 10000,
+                                                       deskew, useHog, 0, 1);
 
 
             BasicNetwork network = options.ContainsKey("l") ?
                 (BasicNetwork)WinPersistence.LoadSaved(options["l"]):
                 CreateNetwork(trainingSet.InputSize);
 
-            var train = /*new ResilientPropagation(network, trainingSet)
-                {
-                    RType = RPROPType.iRPROPp,
-                    L1 = 0.000001,
-                    FixFlatSpot = false,
-                    ErrorFunction = new CrossEntropyErrorFunction(),
-                };*/ new StochasticGradientDescent(network, trainingSet) { BatchSize = 1000 };
-            
-            var improvementStop = new StopTrainingStrategy(0.000001, 10);
-            var minutesStop = new EndMinutesStrategy(minutes);
-            train.AddStrategy(improvementStop);
-            train.AddStrategy(minutesStop);
+            if (network == null)
+                return;
 
-            int epoch = 1;
-            while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
+
+            var initialUpdate = options.ContainsKey("l") ? 0.001 : RPROPConst.DefaultInitialUpdate;
+            var train = new ResilientPropagation(network, trainingSet, initialUpdate, RPROPConst.DefaultMaxStep)
+            {
+                RType = RPROPType.iRPROPp,
+                ErrorFunction = new CrossEntropyErrorFunction(),
+                L1 = l1,
+                L2 = l2,
+            };
+            
+            var minutesStop = new EndMinutesStrategy(minutes);
+            var earlyStop = new EarlyStoppingStrategy(validationSet, testSet);
+            train.AddStrategy(minutesStop);
+            train.AddStrategy(earlyStop);
+            
+            while (!train.TrainingDone)
             {
                 train.Iteration();
-                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + train.IterationNumber + " Error:" + train.Error);
             }
             train.FinishTraining();
             
-            Console.WriteLine(Evaluation.Accuracy(network, testSet));
+            Console.WriteLine("Error rate: " + Evaluation.ErrorRate(network, testSet)*100 + "%");
 
             if (options.ContainsKey("s"))
                 WinPersistence.Save(network, options["s"]);
@@ -101,15 +83,15 @@ namespace enc.mnist
             return dialog.network;
         }
 
-        private BasicMLDataSet LoadDataSet(string imgFile, string labelsFile, bool deskew = false, bool useHog = false,
+        private BasicMLDataSet LoadDataSet(string imgFile, string labelsFile, int startIndex = 0, int toRead = 0,
+            bool deskew = false, bool useHog = false,
             int negative = -1, int positive = 1)
         {
-            Mat[] images = MnistReader.ReadImages(imgFile);
+            Mat[] images = MnistReader.ReadImages(imgFile, startIndex, toRead);
+            double[] labels = MnistReader.ReadLabels(labelsFile, startIndex, toRead);
 
-            double[] labels = MnistReader.ReadLabels(labelsFile);
-            var Y = OneHotEncoder.Transform(labels, negative, positive);
-
-            double[][] X = new double[images.Length][];
+            var ohe = new OneHotEncoder(10, 0, 1);
+            var ret = new BasicMLDataSet();
 
             if (!useHog)
             {
@@ -117,31 +99,37 @@ namespace enc.mnist
                 {
                     Mat img = deskew ? ImageUtil.Deskew(images[i]) : images[i];
 
-                    X[i] = ImageUtil.ImgVector(img);
+                    var imgVec = ImageUtil.ImgVector(img);
+                    var labelVec = ohe.Transform(labels[i]);
+
+                    ret.Add(new BasicMLDataPair(
+                        new BasicMLData(imgVec, false),
+                        new BasicMLData(labelVec, false)
+                        ));
                 }
             }
             else
             {
                 HOGDescriptor hog = new HOGDescriptor(
-                new OpenCvSharp.Size(28, 28), //winSize
-                new OpenCvSharp.Size(14, 14), //blocksize
-                new OpenCvSharp.Size(7, 7), //blockStride,
-                new OpenCvSharp.Size(14, 14), //cellSize,
-                                9, //nbins,
-                                1, //derivAper,
-                                -1, //winSigma,
-                                0, //histogramNormType,
-                                0.2, //L2HysThresh,
-                                true,//gammal correction,
-                                64);//nlevels=64
+                    winSize:    new Size(28, 28),
+                    blockSize:  new Size(14, 14),
+                    blockStride:new Size(7, 7),
+                    cellSize:   new Size(14, 14)
+                );
 
                 for (int i = 0; i < images.Length; i++)
                 {
-                    X[i] = ImageUtil.HOGVector(images[i], hog);
+                    var hogVec = ImageUtil.HOGVector(images[i], hog);
+                    var labelVec = ohe.Transform(labels[i]);
+
+                    ret.Add(new BasicMLDataPair(
+                        new BasicMLData(hogVec, false),
+                        new BasicMLData(labelVec, false)
+                        ));
                 }
             }
-
-            return new BasicMLDataSet(X, Y);
+            
+            return ret;
         }
     }
 }

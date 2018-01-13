@@ -1,10 +1,6 @@
 ﻿using Encog.Persist;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace enc.Utils
@@ -13,7 +9,7 @@ namespace enc.Utils
     {
         public static object LoadSaved(string filename)
         {
-            if (filename != null)
+            if (!String.IsNullOrEmpty(filename))
             {
                 return EncogDirectoryPersistence.LoadObject(new FileInfo(filename));
             }
@@ -34,7 +30,7 @@ namespace enc.Utils
 
         public static bool Save(object obj, string filename)
         {
-            if (filename != null)
+            if (!String.IsNullOrEmpty(filename))
             {
                 EncogDirectoryPersistence.SaveObject(new FileInfo(filename), obj);
                 return true;

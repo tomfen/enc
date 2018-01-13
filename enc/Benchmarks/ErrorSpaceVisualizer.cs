@@ -1,19 +1,11 @@
 ﻿using enc.Utils;
 using Encog.ML.Data;
-using Encog.ML.Data.Basic;
 using Encog.Neural.Networks;
-using Encog.Neural.Networks.Training.Propagation;
 using OxyPlot;
 using OxyPlot.Series;
 using OxyPlot.WindowsForms;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace enc.Benchmarks
@@ -45,8 +37,9 @@ namespace enc.Benchmarks
 
             var contourSeries = new ContourSeries
             {
-                Color = OxyColors.Black,
-                LabelBackground = OxyColors.White,
+                Color = OxyColors.Gray,
+                LabelBackground = OxyColors.WhiteSmoke,
+                Background = OxyColors.White,
                 ColumnCoordinates = xx,
                 RowCoordinates = yy,
                 Data = peaksData,
@@ -77,6 +70,7 @@ namespace enc.Benchmarks
             {
                 Model = model,
                 Dock = DockStyle.Fill,
+                BackColor = Color.White,
             };
 
 

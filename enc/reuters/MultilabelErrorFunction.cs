@@ -1,9 +1,5 @@
 ﻿using Encog.Neural.Error;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Encog.Engine.Network.Activation;
 using Encog.ML.Data;
 
@@ -29,8 +25,6 @@ namespace enc.reuters
 
             for (int j = 0; j < actual.Length; j++)
             {
-                double deriv = af.DerivativeFunction(b[j], a[j]);
-
                 if (actual[j] > threshold) // is positive
                 {
                     double suml = 0;
@@ -40,7 +34,7 @@ namespace enc.reuters
                             suml += Math.Exp(-(actual[j] - actual[l]));
                     }
 
-                    error[j] = -(1 / Yn * Yp) * suml * deriv;
+                    error[j] = -(1 / Yn * Yp) * suml;
                 }
                 else // is negative
                 {
@@ -51,7 +45,7 @@ namespace enc.reuters
                             sumk += Math.Exp(-(actual[k] - actual[j]));
                     }
 
-                    error[j] = (1 / Yn * Yp) * sumk * deriv;
+                    error[j] = (1 / Yn * Yp) * sumk;
                 }
             }
         }

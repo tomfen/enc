@@ -4,22 +4,13 @@ using Encog.MathUtil.Randomize;
 using Encog.ML.Data.Basic;
 using Encog.Neural.Networks;
 using Encog.Neural.Networks.Layers;
-using Encog.Neural.Networks.Training;
 using Encog.Neural.Networks.Training.Propagation;
 using Encog.Neural.Networks.Training.Propagation.Back;
 using Encog.Neural.Networks.Training.Propagation.Manhattan;
 using Encog.Neural.Networks.Training.Propagation.Quick;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
-using Encog.Neural.Networks.Training.Propagation.SCG;
-using OpenCvSharp;
-using OxyPlot;
-using OxyPlot.Series;
-using OxyPlot.WindowsForms;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace enc.Benchmarks
 {
@@ -30,9 +21,7 @@ namespace enc.Benchmarks
         public string Name => "Wizualizacja przestrzeni błędu";
 
         public string Description => throw new NotImplementedException();
-
-        public string Options => throw new NotImplementedException();
-
+        
         public void Run(Dictionary<string, string> options)
         {
             
@@ -62,15 +51,11 @@ namespace enc.Benchmarks
             new RangeRandomizer(-4, 4).Randomize(network, 0);
 
             var algorithms = new Propagation[] {
-                //new Backpropagation((BasicNetwork)network.Clone(), trainingSet, 1, 0),
-                //new Backpropagation((BasicNetwork)network.Clone(), trainingSet, 1, .5),
-                //new QuickPropagation((BasicNetwork)network.Clone(), trainingSet),
-                //new ManhattanPropagation((BasicNetwork)network.Clone(), trainingSet, 0.3),
-                //new ScaledConjugateGradient((BasicNetwork)network.Clone(), trainingSet),
-                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType= RPROPType.iRPROPm},
+                new Backpropagation((BasicNetwork)network.Clone(), trainingSet, 2, 0),
+                new Backpropagation((BasicNetwork)network.Clone(), trainingSet, 2, .9),
+                new QuickPropagation((BasicNetwork)network.Clone(), trainingSet),
+                new ManhattanPropagation((BasicNetwork)network.Clone(), trainingSet, 0.3),
                 new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType= RPROPType.iRPROPp},
-                //new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType= RPROPType.RPROPm},
-                //new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType= RPROPType.RPROPp},
             };
 
             Point<double>[,] results = new Point<double>[epochs+1, algorithms.Length];

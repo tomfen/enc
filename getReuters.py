@@ -16,14 +16,17 @@ use_lsa = False
 use_idf = False
 max_features = None
 components = 100
+feature_min = -1
 out_dir = '\\'
 
-opts, args = getopt.getopt(sys.argv[1:], 'f:c:', ['lsa', 'idf', 'out='])
+opts, args = getopt.getopt(sys.argv[1:], 'f:c:m:', ['lsa', 'idf', 'out='])
 for o, a in opts:
     if o == "-f":
         max_features = int(a)
     elif o == '-c':
         components = int(a)
+    elif o == '-m':
+        feature_min = int(a)
     elif o == '--lsa':
         use_lsa = True
     elif o == '--idf':
@@ -92,7 +95,7 @@ else:
 print('Wczytano {} cech.'.format(len(feature_names)))
 
 # Normalizacja cech
-scaler = MinMaxScaler(feature_range=(-1, 1), copy=False)
+scaler = MinMaxScaler(feature_range=(feature_min, 1), copy=False)
 scaler.fit_transform(vectorised_train_documents)
 scaler.transform(vectorised_test_documents)
 
@@ -106,9 +109,3 @@ print("Zapisywanie zbioru testowego")
 DFTest = pandas.DataFrame(vectorised_test_documents, index=test_ids, columns=feature_names)
 DFTestLabels = pandas.DataFrame(binarized_test_labels, index=test_ids, columns=classes)
 DFTest.join(DFTestLabels, rsuffix="_cat").to_csv('test.csv', header=True, index=False)
-
-# svm = OneVsRestClassifier(SVC(C=1000))
-# svm.fit(vectorised_train_documents, binarized_train_labels)
-# predicted_labels = svm.predict(vectorised_test_documents)
-# f1_micro = f1_score(binarized_test_labels, predicted_labels, average='micro')
-# print(f1_micro)

@@ -1,5 +1,4 @@
-﻿using enc.lander;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -33,11 +32,17 @@ namespace enc
             {
                 com = Console.ReadLine();
                 var options = ExperimentOptions.ParseOptions(com);
-
+                
                 foreach(IExperiment e in examples)
                 {
-                        if (com.Split('-')[0].Trim() == e.Command)
+                    if (com.Split('-')[0].Trim() == e.Command)
+                    {
+                        if (options.ContainsKey("?"))
+                            Console.WriteLine(e.Description);
+                        else
                             e.Run(options);
+                        break;
+                    }
                 }
             } while (com != "exit");
         }

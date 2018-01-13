@@ -1,11 +1,9 @@
-﻿using Encog.Neural.Networks;
-using Encog.ML.Data;
+﻿using Encog.ML.Data;
 using System;
-using Encog.ML.Data.Specific;
-using Encog.ML.Data.Basic;
 using Encog.ML;
 using System.Linq;
 using Encog.Util;
+using System.Collections.Generic;
 
 namespace enc
 {
@@ -62,20 +60,104 @@ namespace enc
 
         }
 
-        static public double Accuracy(IMLRegression network, BasicMLDataSet validationSet)
+        public static double Accuracy(IMLRegression network, IMLDataSet testSet)
         {
             double correct = 0;
             double wrong = 0;
-            for (int i = 0; i < validationSet.Count; i++)
+            for (int i = 0; i < testSet.Count; i++)
             {
-                if (EngineArray.MaxIndex(network.Compute(validationSet[i].Input)) ==
-                    EngineArray.MaxIndex(validationSet[i].Ideal))
+                if (EngineArray.MaxIndex(network.Compute(testSet[i].Input)) ==
+                    EngineArray.MaxIndex(testSet[i].Ideal))
                     correct += 1;
                 else
                     wrong += 1;
             }
 
             return correct / (correct + wrong);
+        }
+
+        public static double ErrorRate(IMLRegression network, IMLDataSet testSet)
+        {
+            return 1.0 - Accuracy(network, testSet);
+        }
+
+        public static Dictionary<string, double> BreakEven(IMLRegression network, IMLDataSet testSet, String[] labels)
+        {
+            const double threshold = 0.5;
+            Dictionary<string, double> ret = new Dictionary<string, double>();
+
+            // podziel na klasy
+            Tuple<double, bool>[][] d = new Tuple<double, bool>[testSet.IdealSize][];
+
+            for (int i=0; i < testSet.IdealSize; i++)
+            {
+                d[i] = new Tuple<double, bool>[testSet.Count];
+            }
+
+            for (int i=0; i < testSet.Count; i++)
+            {
+                var pred = network.Compute(testSet[i].Input);
+                var ideal = testSet[i].Ideal;
+
+                for (int j = 0; j < testSet.IdealSize; j++)
+                {
+                    d[j][i] = new Tuple<double, bool>(pred[j], ideal[j] > threshold);
+                }
+            }
+            
+
+            for (int i = 0; i < testSet.IdealSize; i++)
+                ret.Add(labels[i], BreakEven(d[i]));
+
+            Tuple<double, bool>[] macro = new Tuple<double, bool>[0];
+
+            for (int i = 0; i < testSet.IdealSize; i++)
+                macro = macro.Concat(d[i]).ToArray();
+
+            ret.Add("Macro Avg.", ret.Values.Average());
+            ret.Add("Micro Avg.", BreakEven(macro));
+
+            return ret;
+        }
+
+        private static double BreakEven(Tuple<double, bool>[] d)
+        {
+            d = d.OrderByDescending(x => x.Item1).ToArray();
+            
+            int fn = d.Count(x => x.Item2);
+            int tn = d.Count(x => !x.Item2);
+            int tp = 0;
+            int fp = 0;
+
+            double precisionPrev = 1;
+            double recallPrev = 0;
+            double precision = 1;
+            double recall = 0;
+
+            for (int i = 0; i < d.Length; i++)
+            {
+                if (d[i].Item2)
+                {
+                    tp++;
+                    fn--;
+                }
+                else
+                {
+                    fp++;
+                    tn--;
+                }
+
+                precision = (double)tp / (tp + fp);
+                recall = (double)tp / (tp + fn);
+
+                if (recall >= precision)
+                    break;
+
+                precisionPrev = recall;
+                recallPrev = precision;
+            }
+
+            return (recall + precision) / 2;
         }
     }
 

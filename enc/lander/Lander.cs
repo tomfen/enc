@@ -1,9 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VelcroPhysics.Dynamics;
 using VelcroPhysics.Dynamics.Joints;
 using VelcroPhysics.Factories;
@@ -35,7 +31,7 @@ namespace enc.lander
             new Vector2(0.6f, 0.5f),
             new Vector2(0.4f, -0.5f)};
 
-    public Lander(World world, Vector2 position)
+    public Lander(World world, Vector2 position, double tilt)
         {
             this.world = world;
 
@@ -58,6 +54,7 @@ namespace enc.lander
 
             JointRight = JointFactory.CreateWeldJoint(world,
                 LegRight, Vessel, -legOffsetR, Vessel.LocalCenter); 
+            
 
             JointLeft.FrequencyHz = 60f;
             JointLeft.DampingRatio = 30;
@@ -88,6 +85,8 @@ namespace enc.lander
                 }
             };
 
+            RotateAroundPoint(Vessel.WorldCenter, 5, new Body[] { LegLeft, LegRight, Vessel });
+
             Vessel.SleepingAllowed = false;
             LegLeft.SleepingAllowed = false;
             LegRight.SleepingAllowed = false;
@@ -97,6 +96,21 @@ namespace enc.lander
 
             LegLeft.OnSeparation += (A, B, C) => { if (B.Body != Vessel) landedLegLeft = false; };
             LegRight.OnSeparation += (A, B, C) => { if (B.Body != Vessel) landedLegRight = false; };
+        }
+
+        private void RotateAroundPoint(Vector2 pivot, float angle, Body[] bodies)
+        {
+            var cosAngle = (float)Math.Cos(angle);
+            var sinAngle = (float)Math.Sin(angle);
+
+            foreach(var body in bodies)
+            {
+                var distX = body.WorldCenter.X - pivot.X;
+                var distY = body.WorldCenter.Y - pivot.Y;
+                var newPoint = new Vector2(cosAngle * distX - sinAngle * distY + pivot.X,
+                                           cosAngle * distY + sinAngle * distX + pivot.Y);
+                body.SetTransform(newPoint, angle);
+            }
         }
 
         public void ThrustLeft(float value)

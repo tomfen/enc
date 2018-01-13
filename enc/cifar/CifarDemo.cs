@@ -1,15 +1,13 @@
-﻿using Encog.Engine.Network.Activation;
+﻿using enc.Utils;
 using Encog.ML.Data.Basic;
+using Encog.ML.Train.Strategy;
+using Encog.ML.Train.Strategy.End;
+using Encog.Neural.Error;
 using Encog.Neural.Networks;
-using Encog.Neural.Networks.Layers;
-using Encog.Neural.Networks.Training.Propagation.Quick;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace enc.cifar
 {
@@ -21,52 +19,66 @@ namespace enc.cifar
 
         public string Description => throw new NotImplementedException();
 
-        public string Options => throw new NotImplementedException();
-
         public void Run(Dictionary<string, string> options)
         {
+            int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
+            bool useHog = true;
+            double l1 = ExperimentOptions.getParameterDouble(options, "l1", 0);
+            double l2 = ExperimentOptions.getParameterDouble(options, "l2", 0);
+
             string[] trainFiles = {
                 @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_1.bin",
-                /*@"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_2.bin",
+                @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_2.bin",
                 @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_3.bin",
                 @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_4.bin",
-                @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_5.bin",*/
+            };
+            
+            string[] validationFiles = {
+                @"..\..\..\..\DataSets\cifar-10-batches-bin\data_batch_5.bin",
             };
 
             string[] testFiles = {
                 @"..\..\..\..\DataSets\cifar-10-batches-bin\test_batch.bin",
             };
 
-            BasicMLDataSet trainSet = LoadDataSet(trainFiles);
-            BasicMLDataSet testSet = LoadDataSet(testFiles);
+            BasicMLDataSet trainingSet = LoadDataSet(trainFiles, useHog);
+            BasicMLDataSet validationSet = LoadDataSet(validationFiles, useHog);
+            BasicMLDataSet testSet = LoadDataSet(testFiles, useHog);
+            
 
-            var network = new BasicNetwork();
-            network.AddLayer(new BasicLayer(null, false, 32*32*3));
-            //network.AddLayer(new BasicLayer(new ActivationReLU(), true, 1000));
-            //network.AddLayer(new BasicLayer(new ActivationLinear(), true, 800));
-            network.AddLayer(new BasicLayer(new ActivationReLU(), true, 300));
-            network.AddLayer(new BasicLayer(new ActivationSoftMax(), false, 10));
-            network.Structure.FinalizeStructure();
-            network.Reset();
+            BasicNetwork network = options.ContainsKey("l") ?
+                (BasicNetwork)WinPersistence.LoadSaved(options["l"]) :
+                CreateNetwork(trainingSet.InputSize);
 
-            var train = new ResilientPropagation(network, trainSet)
+
+            var initialUpdate = options.ContainsKey("l") ? 0.001 : RPROPConst.DefaultInitialUpdate;
+            var train = new ResilientPropagation(network, trainingSet, initialUpdate, RPROPConst.DefaultMaxStep)
             {
                 RType = RPROPType.iRPROPp,
-                //ErrorFunction = new CrossEntropyErrorFunction(),
+                ErrorFunction = new CrossEntropyErrorFunction(),
+                L1 = l1,
+                L2 = l2,
             };
             
-            int epoch = 1;
-            while (epoch < 10)
+            var minutesStop = new EndMinutesStrategy(minutes);
+            var earlyStop = new EarlyStoppingStrategy(validationSet, testSet);
+            train.AddStrategy(minutesStop);
+            train.AddStrategy(earlyStop);
+
+            while (!train.TrainingDone)
             {
                 train.Iteration();
-                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
+                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + train.IterationNumber + " Error:" + train.Error);
             }
             train.FinishTraining();
 
             Console.WriteLine(Evaluation.Accuracy(network, testSet));
+            
+            if (options.ContainsKey("s"))
+                WinPersistence.Save(network, options["s"]);
         }
 
-        public BasicMLDataSet LoadDataSet(string[] filenames)
+        public BasicMLDataSet LoadDataSet(string[] filenames, bool useHog)
         {
             BasicMLDataSet ret = new BasicMLDataSet();
 
@@ -76,19 +88,44 @@ namespace enc.cifar
 
                 foreach (Tuple<Mat, int> pair in new CifarIterator(filename))
                 {
-                    var img = new Mat();
                     var encoded = ohe.Transform(pair.Item2);
+                    
+                    double[] input;
+                    if (useHog)
+                    {
+                        Mat grayImg = new Mat();
+                        Cv2.CvtColor(pair.Item1, grayImg, ColorConversionCodes.BGR2GRAY);
 
-                    Cv2.CvtColor(pair.Item1, img, ColorConversionCodes.BGR2HSV);
+                        var hog = new HOGDescriptor(
+                            winSize:    new Size(32, 32),
+                            blockSize:  new Size(16, 16),
+                            blockStride:new Size(8, 8),
+                            cellSize:   new Size(8, 8));
+                        input = ImageUtil.HOGVector(pair.Item1, hog);
+                    }
+                    else
+                    {
+                        Mat img = new Mat();
+                        Cv2.CvtColor(pair.Item1, img, ColorConversionCodes.BGR2HSV);
+
+                        input = ImageUtil.ImgVector(img);
+                    }
 
                     ret.Add(new BasicMLDataPair(
-                        new BasicMLData(ImageUtil.ImgVector(img)),
-                        new BasicMLData(encoded)
+                        new BasicMLData(input, false),
+                        new BasicMLData(encoded, false)
                         ));
                 }
             }
 
             return ret;
+        }
+
+        private BasicNetwork CreateNetwork(int features)
+        {
+            var dialog = new NetworkCreatorForm(features, 10);
+            dialog.ShowDialog();
+            return dialog.network;
         }
     }
 }

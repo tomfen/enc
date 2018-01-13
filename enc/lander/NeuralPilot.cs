@@ -1,15 +1,7 @@
 ﻿using Encog.ML.Data;
 using Encog.ML.Data.Basic;
 using Encog.Neural.NEAT;
-using Encog.Neural.Networks;
 using Encog.Util.Arrayutil;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VelcroPhysics.Dynamics;
-using VelcroPhysics.Utilities;
 
 namespace enc.lander
 {
@@ -17,7 +9,9 @@ namespace enc.lander
     {
         NEATNetwork network;
 
-        NormalizedField Altitude = new NormalizedField(NormalizationAction.Normalize, "alt", 0, -10, 0.9, -0.9);
+        NormalizedField Altitude = new NormalizedField(NormalizationAction.Normalize, "alt", 0, -10, 1, -1);
+        NormalizedField Latitude = new NormalizedField(NormalizationAction.Normalize, "lat", 5, -5, 1, -1);
+        NormalizedField Angle = new NormalizedField(NormalizationAction.Normalize, "ang", 5, -5, 1, -1);
 
         public NeuralPilot(NEATNetwork network) : base()
         {
@@ -31,18 +25,18 @@ namespace enc.lander
             input[1] = Lander.Vessel.LinearVelocity.X;
 
             input[2] = Altitude.Normalize(Lander.Vessel.WorldCenter.Y);
-            input[3] = Lander.Vessel.WorldCenter.X;
+            input[3] = Latitude.Normalize(Lander.Vessel.WorldCenter.X);
 
-            input[4] = Lander.Vessel.Rotation;
+            input[4] = Angle.Normalize(Lander.Vessel.Rotation);
             input[5] = Lander.Vessel.AngularVelocity;
 
             input[6] = Lander.IsLanded() ? 1 : -1;
 
             IMLData output = network.Compute(input);
 
-            Lander.ThrustLeft((float)output[0]);
-            Lander.ThrustRight((float)output[1]);
-            Lander.ThrustUp((float)output[2]);
+            Lander.ThrustLeft((float)output[0]*2-1);
+            Lander.ThrustRight((float)output[1]*2-1);
+            Lander.ThrustUp((float)output[2]*2-1);
 
         }
     }

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace enc.Utils
+﻿namespace enc.Utils
 {
     public struct Point<T> where T: struct
     {

@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace enc
 {
@@ -15,9 +13,7 @@ namespace enc
         public string Command => "a";
 
         public string Description => "Testuje czas obliczania funkcji aktywacji";
-
-        public string Options => "";
-
+        
         public string Name => "Test funkcji aktywacji";
 
         static private double[] RandomArray(int size, double min, double max, int seed)

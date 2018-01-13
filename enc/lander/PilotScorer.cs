@@ -1,9 +1,5 @@
 ﻿using Encog.Neural.Networks.Training;
 using Encog.ML;
-using Encog.Neural.Networks;
-using Microsoft.Xna.Framework;
-using System;
-using VelcroPhysics.Dynamics;
 using Encog.Neural.NEAT;
 
 namespace enc.lander
@@ -47,7 +43,7 @@ namespace enc.lander
             return sim.lander.Vessel.WorldCenter.Y < 10 ?
                 sim.lander.IsCrashed() ?
                     -100000 + steps :
-                    -sim.lander.damage /*-Math.Abs(_x + 4.0f)*100*/:
+                    -sim.lander.damage + sim.lander.fuel/100:
                 float.MinValue;
 
         }

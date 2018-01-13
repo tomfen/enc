@@ -1,14 +1,9 @@
-using Encog;
 using Encog.Engine.Network.Activation;
-using Encog.ML;
 using Encog.ML.EA.Train;
-using Encog.ML.Genetic;
-using Encog.ML.Train;
 using Encog.Neural.NEAT;
 using Encog.Neural.Networks;
 using Encog.Neural.Networks.Training;
 using Encog.Neural.Pattern;
-using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 
@@ -19,16 +14,14 @@ namespace enc.lander
         public string Command => "l";
 
         public string Name => "Symulacja l¹downika";
-
-        public string Options => "";
-
+        
         public string Description => "";
 
         public void Run(Dictionary<string, string> options)
         {
             LanderPilot pilot;
 
-            int population = options.ContainsKey("p") ? int.Parse(options["p"]) : 100;
+            int population = options.ContainsKey("p") ? int.Parse(options["p"]) : 500;
             int epochs = options.ContainsKey("e") ? int.Parse(options["e"]) : 30;
             bool showImprovements = options.ContainsKey("i");
 
@@ -38,14 +31,12 @@ namespace enc.lander
             }
             else
             {
-                NEATPopulation pop = new NEATPopulation(6, 3, population);
+                NEATPopulation pop = new NEATPopulation(7, 3, population);
+                pop.InitialConnectionDensity = 0.5;
                 pop.Reset();
-                pop.InitialConnectionDensity = 1.0; // not required, but speeds processing.
                 ICalculateScore score = new PilotScorer();
-                // train the neural network
+
                 TrainEA train = NEATUtil.ConstructNEATTrainer(pop, score);
-                
-                NEATNetwork network = (NEATNetwork)train.CODEC.Decode(train.BestGenome);
                 
                 Console.WriteLine("Rozpoczynanie uczenia...");
 

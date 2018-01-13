@@ -1,18 +1,8 @@
 ﻿using System;
-using System.Linq;
-using VelcroPhysics.DebugViews;
-using VelcroPhysics;
-using MonoGame;
 using Microsoft.Xna.Framework;
-using VelcroPhysics.Dynamics;
 using Microsoft.Xna.Framework.Graphics;
 using VelcroPhysics.DebugViews.MonoGame;
-using VelcroPhysics.Factories;
 using Microsoft.Xna.Framework.Input;
-using Encog.Neural.Networks;
-using Encog.Neural.Networks.Layers;
-using Encog.Engine.Network.Activation;
-using VelcroPhysics.Extensions.DebugView;
 
 namespace enc.lander
 {
@@ -111,11 +101,9 @@ namespace enc.lander
 
             _debugView.RenderDebugData(ref projection);
 
-            _debugView.BeginCustomDraw(projection, Matrix.Identity);
-            _debugView.DrawSolidCircle(landerSimulation.lander.Vessel.WorldCenter, 5, new Vector2(), Color.CadetBlue);
-            _debugView.EndCustomDraw();
-
-            _spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(), Color.White);
+            /*_spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(0, 0), Color.White);/*
+            _spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(0, 10), Color.White);
+            _spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(0, 20), Color.White);*/
 
             _spriteBatch.End();
             

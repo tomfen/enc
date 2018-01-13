@@ -1,9 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VelcroPhysics.Dynamics;
 using VelcroPhysics.Factories;
 
@@ -13,6 +8,9 @@ namespace enc.lander
     {
         public Body floor;
         public World world;
+
+        public double LanderTilt = 5;
+
         public Lander lander;
         public LanderPilot pilot;
         
@@ -25,7 +23,7 @@ namespace enc.lander
             world = new World(new Vector2(0, 9.8f));
 
             floor = BodyFactory.CreateEdge(world, new Vector2(-100, 9), new Vector2(100, 9));
-
+            
             this.pilot = pilot;
 
             Reset();
@@ -35,7 +33,8 @@ namespace enc.lander
         {
             if(lander != null)
                 lander.Destroy();
-            lander = new Lander(world, new Vector2(0f, -5));
+            lander = new Lander(world, new Vector2(0f, -5), LanderTilt);
+
             pilot.Lander = lander;
         }
 

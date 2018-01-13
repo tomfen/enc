@@ -68,6 +68,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Benchmarks\ActivationBenchmark.cs" />
+    <Compile Include="Benchmarks\ActivationTrain.cs" />
     <Compile Include="Benchmarks\ErrorGraph.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -97,6 +98,7 @@
     <Compile Include="NetworkCreatorForm.Designer.cs">
       <DependentUpon>NetworkCreatorForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="temp.cs" />
     <Compile Include="Utils\Helpers.cs" />
     <Compile Include="reuters\MultilabelErrorFunction.cs" />
     <Compile Include="Utils\CSVWriter.cs" />

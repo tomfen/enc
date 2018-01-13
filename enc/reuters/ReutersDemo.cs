@@ -1,30 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Encog.ML.Data.Specific;
-using Encog.Engine.Network.Activation;
-using Encog.ML.Factory;
 using Encog.Neural.Networks;
-using Encog.Neural.Networks.Layers;
 using Encog.Util.CSV;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
 using Encog.ML.Train.Strategy;
 using Encog.ML.Train.Strategy.End;
-using Encog.Neural.RBF;
-using Encog.Neural.Rbf.Training;
-using Encog.Persist;
 using System.IO;
-using Encog.Neural.Networks.Training.Propagation.Quick;
 using Encog.Neural.Error;
-using Encog.ML.SVM;
 using enc.Utils;
-using Encog.Neural.Networks.Training.Propagation;
-using Encog.Neural.Networks.Training.Propagation.Back;
-using Encog.MathUtil.RBF;
-using Encog.Neural.Networks.Training.Propagation.SGD;
-using Encog.Neural.Networks.Training.Propagation.SGD.Update;
 
 namespace enc.reuters
 {
@@ -35,9 +20,7 @@ namespace enc.reuters
         public string Name => "Klasyfikacja tekstu";
 
         public string Description => "";
-
-        public string Options => "";
-
+        
         public void Run(Dictionary<string, string> options)
         {
             string trainingSetFilename = @"..\..\..\..\DataSets\train.csv";
@@ -54,29 +37,45 @@ namespace enc.reuters
                 (BasicNetwork)WinPersistence.LoadSaved(options["l"]) :
                 CreateNetwork(features);
 
+            if (network == null)
+                return;
+
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
+            double l1 = ExperimentOptions.getParameterDouble(options, "l1", 0);
+            double l2 = ExperimentOptions.getParameterDouble(options, "l2", 0);
 
-            var train = new ResilientPropagation(network, trainingSet)
-                {
-                    RType = RPROPType.iRPROPp,
-                    ErrorFunction = new CrossEntropyErrorFunction(),
-                };
+            var initialUpdate = options.ContainsKey("l") ? 0.001 : RPROPConst.DefaultInitialUpdate;
+            var train = new ResilientPropagation(network, trainingSet, initialUpdate, RPROPConst.DefaultMaxStep)
+            {
+                RType = RPROPType.iRPROPp,
+                ErrorFunction = new CrossEntropyErrorFunction(),
+                L1 = l1,
+                L2 = l2,
+            };
 
 
-            var improvementStop = new StopTrainingStrategy(0.000001, 10);
+            var improvementStop = new StopTrainingStrategy(0, 10);
             var minutesStop = new EndMinutesStrategy(minutes);
             train.AddStrategy(improvementStop);
             train.AddStrategy(minutesStop);
+            //train.AddStrategy(new SimpleEarlyStoppingStrategy(trainingSet, 10));
 
 
             int epoch = 1;
-            while (!(improvementStop.ShouldStop() || minutesStop.ShouldStop()))
+            while (!train.TrainingDone)
             {
                 train.Iteration();
                 Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
             }
 
-            Console.WriteLine(Evaluation.F1(network, testSet));
+            var labels = new String[]{ "earn", "acq", "money-fx", "grain", "crude", "trade", "interest", "ship", "wheat", "corn" };
+            
+            var result = Evaluation.BreakEven(network, testSet, labels);
+
+            foreach(var category in result)
+            {
+                Console.WriteLine(category.Key.ToString().PadRight(15) + category.Value.ToString("0.0000"));
+            }
 
             if (options.ContainsKey("s"))
                 WinPersistence.Save(network, options["s"]);

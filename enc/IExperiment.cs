@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace enc
 {
@@ -10,7 +7,6 @@ namespace enc
         string Command { get; }
         string Name { get; }
         string Description { get; }
-        string Options { get; }
 
         void Run(Dictionary<string, string> options);
     }

@@ -1,6 +1,7 @@
 ﻿using Encog.Neural.Networks.Training;
 using Encog.ML;
 using Encog.Neural.NEAT;
+using System;
 
 namespace enc.lander
 {
@@ -17,34 +18,25 @@ namespace enc.lander
             var sim = new LanderSimulation(pilot);
             
             int steps = 0;
-            int stepsLanded = 0;
 
-            float _x = 10000;
-            bool _xt = false;
+            double r = 0;
+            double minY = 0;
 
-            while (steps < 60 * 15 && stepsLanded < 60)// && !sim.lander.IsCrashed())
+            while (steps < 60 * 15)
             {
                 sim.Step();
                 steps++;
 
-                if (sim.lander.Vessel.WorldCenter.Y > 5)
-                    if (!_xt)
-                        _xt = true;
-                        _x = sim.lander.Vessel.WorldCenter.X;
+                r += Math.Abs(sim.lander.Vessel.Rotation);
 
-                if (sim.lander.IsLanded())
-                    stepsLanded++;
-                else
-                    stepsLanded = 0;
+                minY = Math.Min(0, sim.lander.WorldCenter.Y - 10);
             }
 
 
 
-            return sim.lander.Vessel.WorldCenter.Y < 10 ?
-                sim.lander.IsCrashed() ?
-                    -100000 + steps :
-                    -sim.lander.damage + sim.lander.fuel/100:
-                float.MinValue;
+            return sim.lander.WorldCenter.Y < 10 ?
+                    - r/10 - sim.lander.damage:
+                    float.MinValue;
 
         }
         

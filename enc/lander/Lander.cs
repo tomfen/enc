@@ -22,6 +22,10 @@ namespace enc.lander
         public float fuel = 5000;
         public float damage = 0;
 
+        public float ThrustUpValue { get; private set; }
+        public float ThrustLeftValue { get; private set; }
+        public float ThrustRightValue { get; private set; }
+
         private bool landedLegLeft = false;
         private bool landedLegRight = false;
 
@@ -31,7 +35,7 @@ namespace enc.lander
             new Vector2(0.6f, 0.5f),
             new Vector2(0.4f, -0.5f)};
 
-    public Lander(World world, Vector2 position, double tilt)
+    public Lander(World world, Vector2 position, float tilt)
         {
             this.world = world;
 
@@ -85,7 +89,7 @@ namespace enc.lander
                 }
             };
 
-            RotateAroundPoint(Vessel.WorldCenter, 5, new Body[] { LegLeft, LegRight, Vessel });
+            RotateAroundPoint(Vessel.WorldCenter, tilt, new Body[] { LegLeft, LegRight, Vessel });
 
             Vessel.SleepingAllowed = false;
             LegLeft.SleepingAllowed = false;
@@ -125,6 +129,12 @@ namespace enc.lander
                 Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(0.4f, -0.5f)));
 
                 fuel -= Math.Abs(value);
+
+                ThrustLeftValue = Math.Abs(value);
+            }
+            else
+            {
+                ThrustLeftValue = 0;
             }
         }
 
@@ -140,6 +150,12 @@ namespace enc.lander
                 Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(-0.4f, -0.5f)));
 
                 fuel -= Math.Abs(value);
+
+                ThrustRightValue = Math.Abs(value);
+            }
+            else
+            {
+                ThrustRightValue = 0;
             }
         }
 
@@ -155,6 +171,12 @@ namespace enc.lander
                 Vessel.ApplyForce(ThrustVector, Vessel.GetWorldPoint(new Vector2(0f, 1)));
 
                 fuel -= Math.Abs(value);
+
+                ThrustUpValue = Math.Abs(value);
+            }
+            else
+            {
+                ThrustUpValue = 0;
             }
         }
 
@@ -167,9 +189,9 @@ namespace enc.lander
             world.RemoveBody(Vessel);
         }
 
-        public bool IsCrashed()
+        public Vector2 WorldCenter
         {
-            return Math.Abs(Vessel.Rotation) > (Math.PI / 2);
+            get { return Vessel.WorldCenter; }
         }
 
         public bool IsLanded()

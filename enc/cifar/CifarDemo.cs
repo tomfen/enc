@@ -22,7 +22,7 @@ namespace enc.cifar
         public void Run(Dictionary<string, string> options)
         {
             int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
-            bool useHog = true;
+            bool useHog = options.ContainsKey("hog");
             double l1 = ExperimentOptions.getParameterDouble(options, "l1", 0);
             double l2 = ExperimentOptions.getParameterDouble(options, "l2", 0);
 
@@ -50,6 +50,8 @@ namespace enc.cifar
                 (BasicNetwork)WinPersistence.LoadSaved(options["l"]) :
                 CreateNetwork(trainingSet.InputSize);
 
+            if (network == null)
+                return;
 
             var initialUpdate = options.ContainsKey("l") ? 0.001 : RPROPConst.DefaultInitialUpdate;
             var train = new ResilientPropagation(network, trainingSet, initialUpdate, RPROPConst.DefaultMaxStep)

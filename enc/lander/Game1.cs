@@ -13,8 +13,6 @@ namespace enc.lander
         private SpriteFont font;
         private DebugView _debugView;
 
-        private Texture2D flame;
-
         public LanderSimulation landerSimulation;
         
         private float _X;
@@ -42,15 +40,10 @@ namespace enc.lander
             _spriteBatch = new SpriteBatch(_graphics.GraphicsDevice);
             
             font = Content.Load<SpriteFont>("font");
-            flame = Content.Load<Texture2D>("flame");
 
 
             _debugView = new DebugView(landerSimulation.world);
             _debugView.LoadContent(_graphics.GraphicsDevice, this.Content);
-            /*_debugView.AppendFlags(
-                DebugViewFlags.PerformanceGraph |
-                DebugViewFlags.DebugPanel |
-                DebugViewFlags.Controllers);*/
         }
 
         protected override void Update(GameTime gameTime)
@@ -101,9 +94,11 @@ namespace enc.lander
 
             _debugView.RenderDebugData(ref projection);
 
-            /*_spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(0, 0), Color.White);/*
-            _spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(0, 10), Color.White);
-            _spriteBatch.DrawString(font, landerSimulation.lander.IsLanded().ToString(), new Vector2(0, 20), Color.White);*/
+            _spriteBatch.DrawString(font, "Silnik dolny: " + landerSimulation.lander?.ThrustUpValue, new Vector2(0, 0), Color.White);
+            _spriteBatch.DrawString(font, "Silnik lewy:  " + landerSimulation.lander?.ThrustLeftValue, new Vector2(0, 15), Color.White);
+            _spriteBatch.DrawString(font, "Silnik prawy: " + landerSimulation.lander?.ThrustRightValue, new Vector2(0, 30), Color.White);
+            _spriteBatch.DrawString(font, "Paliwo: " + landerSimulation.lander?.fuel, new Vector2(150, 0), Color.White);
+            _spriteBatch.DrawString(font, "Uszkodzenie: " + landerSimulation.lander?.damage, new Vector2(150, 15), Color.White);
 
             _spriteBatch.End();
             

@@ -31,8 +31,11 @@ namespace enc.lander
             }
             else
             {
-                NEATPopulation pop = new NEATPopulation(7, 3, population);
-                pop.InitialConnectionDensity = 0.5;
+                NEATPopulation pop = new NEATPopulation(7, 3, population)
+                {
+                    InitialConnectionDensity = 0.5,
+                    ActivationCycles = 1
+                };
                 pop.Reset();
                 ICalculateScore score = new PilotScorer();
 

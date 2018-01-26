@@ -20,18 +20,20 @@ namespace enc.reuters
         public string Name => "Klasyfikacja tekstu";
 
         public string Description => "";
-        
+
         public void Run(Dictionary<string, string> options)
         {
             string trainingSetFilename = @"..\..\..\..\DataSets\train.csv";
             string testSetFilename = @"..\..\..\..\DataSets\test.csv";
 
+            int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
+            double l1 = ExperimentOptions.getParameterDouble(options, "l1", 0);
+            double l2 = ExperimentOptions.getParameterDouble(options, "l2", 0);
+
             int features = NumberOfFeatures(trainingSetFilename);
-            Console.WriteLine(String.Format("Wczytano {0} cech.", features));
+            Console.WriteLine(String.Format("Wczytuję {0} cech...", features));
 
             var format = new CSVFormat('.', ',');
-            CSVMLDataSet trainingSet = new CSVMLDataSet(trainingSetFilename, features, 10, true, format, false);
-            CSVMLDataSet testSet = new CSVMLDataSet(testSetFilename, features, 10, true, format, false);
 
             BasicNetwork network = options.ContainsKey("l") ?
                 (BasicNetwork)WinPersistence.LoadSaved(options["l"]) :
@@ -40,41 +42,50 @@ namespace enc.reuters
             if (network == null)
                 return;
 
-            int minutes = ExperimentOptions.getParameterInt(options, "m", 10);
-            double l1 = ExperimentOptions.getParameterDouble(options, "l1", 0);
-            double l2 = ExperimentOptions.getParameterDouble(options, "l2", 0);
-
-            var initialUpdate = options.ContainsKey("l") ? 0.001 : RPROPConst.DefaultInitialUpdate;
-            var train = new ResilientPropagation(network, trainingSet, initialUpdate, RPROPConst.DefaultMaxStep)
+            if (minutes > 0)
             {
-                RType = RPROPType.iRPROPp,
-                ErrorFunction = new CrossEntropyErrorFunction(),
-                L1 = l1,
-                L2 = l2,
-            };
+                CSVMLDataSet trainingSet = new CSVMLDataSet(trainingSetFilename, features, 90, true, format, false);
+
+                var initialUpdate = options.ContainsKey("l") ? 0.001 : RPROPConst.DefaultInitialUpdate;
+                var train = new ResilientPropagation(network, trainingSet, initialUpdate, RPROPConst.DefaultMaxStep)
+                {
+                    RType = RPROPType.iRPROPp,
+                    ErrorFunction = new CrossEntropyErrorFunction(),
+                    L1 = l1,
+                    L2 = l2,
+                };
 
 
-            var improvementStop = new StopTrainingStrategy(0, 10);
-            var minutesStop = new EndMinutesStrategy(minutes);
-            train.AddStrategy(improvementStop);
-            train.AddStrategy(minutesStop);
-            //train.AddStrategy(new SimpleEarlyStoppingStrategy(trainingSet, 10));
+                var improvementStop = new StopTrainingStrategy(0, 10);
+                var minutesStop = new EndMinutesStrategy(minutes);
+                train.AddStrategy(improvementStop);
+                train.AddStrategy(minutesStop);
 
-
-            int epoch = 1;
-            while (!train.TrainingDone)
-            {
-                train.Iteration();
-                Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
+                int epoch = 1;
+                while (!train.TrainingDone)
+                {
+                    train.Iteration();
+                    Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + "| Epoch #" + epoch++ + " Error:" + train.Error);
+                }
             }
 
-            var labels = new String[]{ "earn", "acq", "money-fx", "grain", "crude", "trade", "interest", "ship", "wheat", "corn" };
-            
-            var result = Evaluation.BreakEven(network, testSet, labels);
+            var labels = Labels(trainingSetFilename);
 
-            foreach(var category in result)
+            CSVMLDataSet testSet = new CSVMLDataSet(testSetFilename, features, 90, true, format, false);
+
+            var breakEven = Evaluation.BreakEven(network, testSet, labels);
+            var f1 = Evaluation.F1(network, testSet, labels);
+
+
+            var relevantCategories = new string[11] {
+                "earn", "acq", "money-fx", "grain", "crude", "trade", "interest", "ship", "wheat", "corn",
+                "Micro Avg."};
+
+            Console.WriteLine("Kategoria         BEP       F1");
+
+            foreach (var category in relevantCategories)
             {
-                Console.WriteLine(category.Key.ToString().PadRight(15) + category.Value.ToString("0.0000"));
+                Console.WriteLine(category.PadRight(15) + breakEven[category].ToString("0.0000") + "   " + f1[category].ToString("0.0000"));
             }
 
             if (options.ContainsKey("s"))
@@ -83,14 +94,20 @@ namespace enc.reuters
 
         private BasicNetwork CreateNetwork(int features)
         {
-            var dialog = new NetworkCreatorForm(features, 10);
+            var dialog = new NetworkCreatorForm(features, 90);
             dialog.ShowDialog();
             return dialog.network;
         }
 
         private int NumberOfFeatures(string filename)
         {
-            return File.ReadLines(filename).First().Split(',').Length - 10;
+            return File.ReadLines(filename).First().Split(',').Length - 90;
+        }
+
+        private string[] Labels(string filename)
+        {
+            string[] header = File.ReadLines(filename).First().Split(',');
+            return header.Skip(header.Count() - 90).ToArray();
         }
     }
 }

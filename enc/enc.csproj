@@ -38,7 +38,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -98,7 +99,6 @@
     <Compile Include="NetworkCreatorForm.Designer.cs">
       <DependentUpon>NetworkCreatorForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="temp.cs" />
     <Compile Include="Utils\Helpers.cs" />
     <Compile Include="reuters\MultilabelErrorFunction.cs" />
     <Compile Include="Utils\CSVWriter.cs" />

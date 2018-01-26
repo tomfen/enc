@@ -9,15 +9,11 @@ namespace enc.lander
         public Body floor;
         public World world;
 
-        public double LanderTilt = 5;
+        private float LanderTilt = -1.0f;
 
         public Lander lander;
         public LanderPilot pilot;
         
-        public bool ShouldMinimize => false;
-
-        public bool RequireSingleThreaded => true;
-
         public LanderSimulation(LanderPilot pilot)
         {
             world = new World(new Vector2(0, 9.8f));

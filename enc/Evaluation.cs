@@ -9,55 +9,83 @@ namespace enc
 {
     public class Evaluation
     {
-        public static string F1(IMLRegression network, IMLDataSet testSet)
+        public static Dictionary<string, double> F1(IMLRegression network, IMLDataSet testSet, String[] labels)
         {
-            double[] false_pos = new double[testSet.IdealSize + 1];
-            double[] false_neg = new double[testSet.IdealSize + 1];
-            double[] true_pos = new double[testSet.IdealSize + 1];
-            double[] true_neg = new double[testSet.IdealSize + 1];
+            Dictionary<string, double> ret = new Dictionary<string, double>();
+
+            var d = DivideByClass(network, testSet, 0.5);
+
+            for (int i = 0; i < testSet.IdealSize; i++)
+                ret.Add(labels[i], F1(d[i]));
+
+            Tuple<double, bool>[] macro = new Tuple<double, bool>[0];
+
+            for (int i = 0; i < testSet.IdealSize; i++)
+                macro = macro.Concat(d[i]).ToArray();
+
+            ret.Add("Macro Avg.", ret.Values.Average());
+            ret.Add("Micro Avg.", F1(macro));
+
+            return ret;
+        }
+
+        private static Tuple<double, bool>[][] DivideByClass(IMLRegression network, IMLDataSet testSet, double threshold)
+        {
+            // podziel na klasy
+            Tuple<double, bool>[][] divided = new Tuple<double, bool>[testSet.IdealSize][];
+
+            for (int i = 0; i < testSet.IdealSize; i++)
+            {
+                divided[i] = new Tuple<double, bool>[testSet.Count];
+            }
 
             for (int i = 0; i < testSet.Count; i++)
             {
-                var comp = network.Compute(testSet[i].Input);
+                var pred = network.Compute(testSet[i].Input);
+                var ideal = testSet[i].Ideal;
 
-                for (int j = 0; j < comp.Count; j++)
+                for (int j = 0; j < testSet.IdealSize; j++)
                 {
-                    if (testSet[i].Ideal[j] > 0.0)
-                    {
-                        if (comp[j] > 0.0)
-                            true_pos[j]++;
-                        else
-                            false_neg[j]++;
-                    }
-                    else
-                    {
-                        if (comp[j] > 0.0)
-                            false_pos[j]++;
-                        else
-                            true_neg[j]++;
-                    }
+                    divided[j][i] = new Tuple<double, bool>(pred[j], ideal[j] > threshold);
                 }
             }
 
-            double[] recall = new double[testSet.IdealSize+1];
-            double[] precision = new double[testSet.IdealSize+1];
-            double[] f1 = new double[testSet.IdealSize+1];
+            return divided;
+        }
 
-            false_pos[testSet.IdealSize] = false_pos.Sum();
-            false_neg[testSet.IdealSize] = false_neg.Sum();
-            true_pos[testSet.IdealSize] = true_pos.Sum();
-            true_neg[testSet.IdealSize] = true_neg.Sum();
+        private static double F1(Tuple<double, bool>[] d)
+        {
+            double false_pos = 0;
+            double false_neg = 0;
+            double true_pos = 0;
+            double true_neg = 0;
 
-            for (int j = 0; j < testSet.IdealSize + 1; j++)
+            for (int i = 0; i < d.Length; i++)
             {
-                recall[j] = (double)true_pos[j] / (true_pos[j] + false_pos[j]);
-                precision[j] = (double)true_pos[j] / (true_pos[j] + false_neg[j]);
-                f1[j] = 2.0 * (precision[j] * recall[j]) / +(precision[j] + recall[j]);
-                if (Double.IsNaN(f1[j])) f1[j] = 0;
+                if (d[i].Item2)
+                {
+                    if (d[i].Item1 > 0.0)
+                        true_pos++;
+                    else
+                        false_neg++;
+                }
+                else
+                {
+                    if (d[i].Item1 > 0.0)
+                        false_pos++;
+                    else
+                        true_neg++;
+                }
             }
+            
+            double recall = true_pos / (true_pos + false_pos);
+            double precision = true_pos / (true_pos + false_neg);
+            double f1 = 2.0 * (precision * recall) / (precision + recall);
 
-            return string.Join("\n", f1);
+            if (Double.IsNaN(f1))
+                f1 = 0;
 
+            return f1;
         }
 
         public static double Accuracy(IMLRegression network, IMLDataSet testSet)
@@ -83,29 +111,11 @@ namespace enc
 
         public static Dictionary<string, double> BreakEven(IMLRegression network, IMLDataSet testSet, String[] labels)
         {
-            const double threshold = 0.5;
+            
             Dictionary<string, double> ret = new Dictionary<string, double>();
 
-            // podziel na klasy
-            Tuple<double, bool>[][] d = new Tuple<double, bool>[testSet.IdealSize][];
-
-            for (int i=0; i < testSet.IdealSize; i++)
-            {
-                d[i] = new Tuple<double, bool>[testSet.Count];
-            }
-
-            for (int i=0; i < testSet.Count; i++)
-            {
-                var pred = network.Compute(testSet[i].Input);
-                var ideal = testSet[i].Ideal;
-
-                for (int j = 0; j < testSet.IdealSize; j++)
-                {
-                    d[j][i] = new Tuple<double, bool>(pred[j], ideal[j] > threshold);
-                }
-            }
+            var d = DivideByClass(network, testSet, 0.5);
             
-
             for (int i = 0; i < testSet.IdealSize; i++)
                 ret.Add(labels[i], BreakEven(d[i]));
 
@@ -120,23 +130,26 @@ namespace enc
             return ret;
         }
 
-        private static double BreakEven(Tuple<double, bool>[] d)
+        private static double BreakEven(Tuple<double, bool>[] pairs)
         {
-            d = d.OrderByDescending(x => x.Item1).ToArray();
-            
-            int fn = d.Count(x => x.Item2);
-            int tn = d.Count(x => !x.Item2);
-            int tp = 0;
-            int fp = 0;
+            pairs = pairs.OrderByDescending(x => x.Item1).ToArray();
+
+            double fn = pairs.Count(x => x.Item2);
+            double tn = pairs.Count(x => !x.Item2);
+            double tp = 0;
+            double fp = 0;
 
             double precisionPrev = 1;
             double recallPrev = 0;
-            double precision = 1;
-            double recall = 0;
+            double precision;
+            double recall;
 
-            for (int i = 0; i < d.Length; i++)
+            double best = 0;
+
+            //Zmniejszamy próg
+            for (int i = 0; i < pairs.Length; i++)
             {
-                if (d[i].Item2)
+                if (pairs[i].Item2)
                 {
                     tp++;
                     fn--;
@@ -147,17 +160,32 @@ namespace enc
                     tn--;
                 }
 
-                precision = (double)tp / (tp + fp);
-                recall = (double)tp / (tp + fn);
+                precision = tp / (tp + fp);
+                recall = tp / (tp + fn);
 
-                if (recall >= precision)
-                    break;
+                if (recall == precision) {
+                    best = Math.Max(best, recall);
+                }
+                else if (precisionPrev > recallPrev && precision < recall) //interpolacja
+                {
+                    double w1 = precisionPrev - recallPrev;
+                    double w2 = recall - precision;
+                    double weightedAvg = (precisionPrev * w2 + precision * w1) / (w1 + w2);
+                    best = Math.Max(best, weightedAvg);
+                }
+                else if (precisionPrev < recallPrev && precision > recall)
+                {
+                    double w1 = recallPrev - precisionPrev; 
+                    double w2 = precision - recall;
+                    double weightedAvg = (precisionPrev * w2 + precision * w1) / (w1 + w2);
+                    best = Math.Max(best, weightedAvg);
+                }
 
                 precisionPrev = recall;
                 recallPrev = precision;
             }
 
-            return (recall + precision) / 2;
+            return best;
         }
     }
 

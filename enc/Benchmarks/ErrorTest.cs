@@ -1,9 +1,12 @@
 ﻿using Encog.Engine.Network.Activation;
 using Encog.ML.Data.Specific;
+using Encog.ML.Train;
 using Encog.Neural.Networks;
 using Encog.Neural.Networks.Layers;
+using Encog.Neural.Networks.Training;
 using Encog.Neural.Networks.Training.Propagation;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
+using Encog.Neural.Networks.Training.Propagation.SGD;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,12 +34,10 @@ namespace enc.Benchmarks
             network.Structure.FinalizeStructure();
             network.Reset();
 
-            var algorithms = new Propagation[]
+            var algorithms = new BasicTraining[]
             {
-                //new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType = RPROPType.RPROPp },
-                //new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType = RPROPType.iRPROPp },
-                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet),
-                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) {ErrorFunction=new reuters.MultilabelErrorFunction() },
+                new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType = RPROPType.iRPROPp },
+               new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet),
             };
 
             double[,] results = new double[epochs + 1, algorithms.Length];

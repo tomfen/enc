@@ -12,7 +12,8 @@ namespace enc
     {
         public string Command => "a";
 
-        public string Description => "Testuje czas obliczania funkcji aktywacji";
+        public string Description => "Testuje czas obliczania funkcji aktywacji\n" +
+            "-a ";
         
         public string Name => "Test funkcji aktywacji";
 

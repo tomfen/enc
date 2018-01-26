@@ -21,10 +21,13 @@ namespace enc.Utils
                     DefaultExt = "EG",
                     AddExtension = true
                 };
-                dialog.ShowDialog();
-                filename = dialog.FileName;
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    filename = dialog.FileName;
 
-                return EncogDirectoryPersistence.LoadObject(new FileInfo(filename));
+                    return EncogDirectoryPersistence.LoadObject(new FileInfo(filename));
+                }
+                return null;
             }
         }
 

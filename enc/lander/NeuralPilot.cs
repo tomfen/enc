@@ -24,19 +24,19 @@ namespace enc.lander
             input[0] = Lander.Vessel.LinearVelocity.Y;
             input[1] = Lander.Vessel.LinearVelocity.X;
 
-            input[2] = Altitude.Normalize(Lander.Vessel.WorldCenter.Y);
-            input[3] = Latitude.Normalize(Lander.Vessel.WorldCenter.X);
+            input[2] = Altitude.Normalize(Lander.WorldCenter.Y);
+            input[3] = Latitude.Normalize(Lander.WorldCenter.X);
 
             input[4] = Angle.Normalize(Lander.Vessel.Rotation);
             input[5] = Lander.Vessel.AngularVelocity;
 
-            input[6] = Lander.IsLanded() ? 1 : -1;
+            input[6] = Lander.IsLanded() ? 1 : 0;
 
             IMLData output = network.Compute(input);
 
-            Lander.ThrustLeft((float)output[0]*2-1);
-            Lander.ThrustRight((float)output[1]*2-1);
-            Lander.ThrustUp((float)output[2]*2-1);
+            Lander.ThrustLeft((float)output[0] * 2 - 1);
+            Lander.ThrustRight((float)output[1] * 2 - 1);
+            Lander.ThrustUp((float)output[2] * 2 - 1);
 
         }
     }

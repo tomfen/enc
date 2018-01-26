@@ -1,4 +1,6 @@
-﻿using Encog.Neural.Networks.Training.Propagation;
+﻿using Encog.ML.Train;
+using Encog.Neural.Networks.Training;
+using Encog.Neural.Networks.Training.Propagation;
 using OxyPlot;
 using OxyPlot.Series;
 using OxyPlot.WindowsForms;
@@ -8,7 +10,7 @@ namespace enc.Benchmarks
 {
     public partial class ErrorGraph : Form
     {
-        public ErrorGraph(double[,] results, Propagation[] algorithms)
+        public ErrorGraph(double[,] results, BasicTraining[] algorithms)
         {
             InitializeComponent();
 

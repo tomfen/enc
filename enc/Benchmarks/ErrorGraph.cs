@@ -1,6 +1,4 @@
 ﻿using Encog.ML.Train;
-using Encog.Neural.Networks.Training;
-using Encog.Neural.Networks.Training.Propagation;
 using OxyPlot;
 using OxyPlot.Series;
 using OxyPlot.WindowsForms;

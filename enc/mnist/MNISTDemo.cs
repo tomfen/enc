@@ -8,7 +8,6 @@ using Encog.ML.Train.Strategy;
 using Encog.ML.Train.Strategy.End;
 using Encog.Neural.Error;
 using enc.Utils;
-using Encog.Neural.Networks.Training.Propagation.Back;
 
 namespace enc.mnist
 {
@@ -16,9 +15,17 @@ namespace enc.mnist
     {
         public string Command => "m";
 
-        public string Description => "";
-
         public string Name => "Klasyfikacja zbioru MNIST";
+        
+        public string Description => "Trenuje i testuje model dla klasyfikacji zbioru MNIST.\n" +
+            "-m int: maksymalny czas uczenia w minutach. Domyślnie 10. Ustaw 0, jezeli wczytujesz model do testow.\n" +
+            "-deskew: jezeli podano, to pochylenie jest normalizowane.\n" +
+            "-hog: jeżeli podano, to używa deskryptora HOG zamiast wartosci pikseli.\n" +
+            "-l1 double: wartosc regularyzacji l1. Domyslnie 0.\n" +
+            "-l2 double: wartosc regularyzacji l2. Domyslnie 0.\n" +
+            "-l string: sciezka do wczytania modelu. Jezeli nie podano, to tworzony jest nowy model za pomoca kreatora. " +
+            "Jezeli nie podano wartosci, to otwierany jest eksplorator.\n" +
+            "-s string: sciezka do zapisu modelu. Jezeli nie podano wartosci, to otwierany jest eksplorator.";
 
         public void Run(Dictionary<string, string> options)
         {

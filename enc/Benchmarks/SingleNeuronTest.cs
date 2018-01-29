@@ -9,7 +9,6 @@ using Encog.Neural.Networks.Training.Propagation.Back;
 using Encog.Neural.Networks.Training.Propagation.Manhattan;
 using Encog.Neural.Networks.Training.Propagation.Quick;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
-using System;
 using System.Collections.Generic;
 
 namespace enc.Benchmarks
@@ -20,8 +19,11 @@ namespace enc.Benchmarks
 
         public string Name => "Wizualizacja przestrzeni błędu";
 
-        public string Description => throw new NotImplementedException();
-        
+        public string Description =>
+            "Przedstawia działanie wybranych algorytmów uczenia na podstawie prostej sieci z jednym neuronem.\n" +
+            "-e int: liczba iteracji, domyślnie 50.\n" +
+            "-s string: jeżeli podano, to zapisuje wynik do pliku w formacie .csv.";
+
         public void Run(Dictionary<string, string> options)
         {
             

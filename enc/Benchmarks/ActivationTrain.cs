@@ -16,10 +16,13 @@ namespace enc.Benchmarks
     {
         public string Command => "s";
 
-        public string Description => "Testuje czas obliczania funkcji aktywacji";
+        public string Name => "Testuje czas obliczania funkcji aktywacji";
         
-        public string Name => "Test sfauiasifas";
-        
+        public string Description => "Test czasu obliczania iteracji ze względu na funkcje aktywacji.\n" +
+            "-e int: liczba iteracji, domyślnie 30.\n" +
+            "-size int: liczba pierwszych próbek do wczytania.\n" +
+            "-s string: jeżeli podano, to zapisuje wynik do pliku w formacie .csv.";
+
         public void Run(Dictionary<string, string> options)
         {
             int epochs = ExperimentOptions.getParameterInt(options, "e", 30);

@@ -12,8 +12,10 @@ namespace enc
     {
         public string Command => "a";
 
-        public string Description => "Testuje czas obliczania funkcji aktywacji\n" +
-            "-a ";
+        public string Description => "Testuje czas obliczania funkcji aktywacji na podstawie losowo wygenerowanej tablicy.\n" +
+            "-a int: rozmiar tablicy do obliczeń. Domyślnie 20000000.\n" +
+            "-m double: maksymalna wartość bezwzględna elementów tablicy. Domyślnie 50.\n" +
+            "-s string: jeżeli podano, to zapisuje wynik do pliku w formacie .csv.";
         
         public string Name => "Test funkcji aktywacji";
 
@@ -33,7 +35,7 @@ namespace enc
         public void Run(Dictionary<string, string> options)
         {
             int size = ExperimentOptions.getParameterInt(options, "a", 20000000);
-            double maxabs = ExperimentOptions.getParameterDouble(options, "m", -50.0);
+            double maxabs = ExperimentOptions.getParameterDouble(options, "m", 50.0);
             
             var functions = GetAllActivationFuns();
 

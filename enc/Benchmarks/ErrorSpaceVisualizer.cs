@@ -49,8 +49,10 @@ namespace enc.Benchmarks
 
             for (int series = 0; series < results.GetLength(1); series++)
             {
-                var lineSeries = new LineSeries();
-                lineSeries.Title = seriesLabels[series].GetType().Name;
+                var lineSeries = new LineSeries
+                {
+                    Title = seriesLabels[series].GetType().Name
+                };
                 for (int pt = 0; pt < results.GetLength(0); pt++)
                 {
                     var x = results[pt, series].X;

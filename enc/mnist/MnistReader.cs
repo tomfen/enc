@@ -1,5 +1,4 @@
 ﻿using OpenCvSharp;
-using System;
 using System.IO;
 
 namespace enc.mnist

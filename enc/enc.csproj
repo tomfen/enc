@@ -161,22 +161,20 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\encog-dotnet-core\encog-core-cs\encog-core-cs.csproj">
-      <Project>{ac6fadf9-0904-4ebd-b22c-1c787c7e7a95}</Project>
-      <Name>encog-core-cs</Name>
-    </ProjectReference>
     <ProjectReference Include="DebugViews\MonoGame\MonoGame.csproj">
       <Project>{d87d14bd-35b2-437b-8c7f-b83357b92689}</Project>
       <Name>MonoGame</Name>
+    </ProjectReference>
+    <ProjectReference Include="encog-core-cs\encog-core-cs.csproj">
+      <Project>{ac6fadf9-0904-4ebd-b22c-1c787c7e7a95}</Project>
+      <Name>encog-core-cs</Name>
     </ProjectReference>
     <ProjectReference Include="VelcroPhysics\VelcroPhysics.MonoGame.csproj">
       <Project>{c5d14e75-934d-4084-8475-cc69eb32e951}</Project>
       <Name>VelcroPhysics.MonoGame</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="network\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="Benchmarks\ErrorGraph.resx">
       <DependentUpon>ErrorGraph.cs</DependentUpon>

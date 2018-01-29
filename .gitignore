@@ -303,3 +303,4 @@ $RECYCLE.BIN/
 *.lnk
 TEST/**
 DataSets/**
+enc/encog-core-cs/**

@@ -15,14 +15,18 @@ namespace enc.lander
 
         public string Name => "Symulacja l¹downika";
         
-        public string Description => "";
+        public string Description => "Trenowanie sieci neuronowej za pomoc¹ algorytmu ewolucyjnego na przykladzie prostej gry.\n" +
+            "-p int: poczatkowy rozmiar populacji. Domyslnie 500.\n" +
+            "-e int: liczba iteracji, Domyslnie 30.\n" +
+            "-i: jezeli podano, to pokazywane jest ka¿de polepszenie wyniku.\n" +
+            "-k: jezeli podano, to ladownik jest sterowany przez klawiature.";
 
         public void Run(Dictionary<string, string> options)
         {
             LanderPilot pilot;
 
-            int population = options.ContainsKey("p") ? int.Parse(options["p"]) : 500;
-            int epochs = options.ContainsKey("e") ? int.Parse(options["e"]) : 30;
+            int population = ExperimentOptions.getParameterInt(options, "p", 500);
+            int epochs = ExperimentOptions.getParameterInt(options, "e", 30);
             bool showImprovements = options.ContainsKey("i");
 
             if (options.ContainsKey("k"))

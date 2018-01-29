@@ -3,10 +3,9 @@ using Encog.ML.Data.Specific;
 using Encog.ML.Train;
 using Encog.Neural.Networks;
 using Encog.Neural.Networks.Layers;
-using Encog.Neural.Networks.Training;
-using Encog.Neural.Networks.Training.Propagation;
+using Encog.Neural.Networks.Training.Propagation.Back;
+using Encog.Neural.Networks.Training.Propagation.Quick;
 using Encog.Neural.Networks.Training.Propagation.Resilient;
-using Encog.Neural.Networks.Training.Propagation.SGD;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,9 +16,11 @@ namespace enc.Benchmarks
     {
         public string Command => "e";
 
-        public string Name => "Test błędu uczenia";
+        public string Name => "Wykres błędu uczenia";
 
-        public string Description => throw new NotImplementedException();
+        public string Description => "Wykreśla wykres błędu od iteracji na przykładzie zbioru Iris.\n" +
+            "-e int: liczba iteracji, domyślnie 50.\n" + 
+            "-s string: jeżeli podano, to zapisuje wynik do pliku w formacie .csv.";
         
         public void Run(Dictionary<string, string> options)
         {
@@ -37,7 +38,9 @@ namespace enc.Benchmarks
             var algorithms = new BasicTraining[]
             {
                 new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet) { RType = RPROPType.iRPROPp },
-               new ResilientPropagation((BasicNetwork)network.Clone(), trainingSet),
+                new QuickPropagation((BasicNetwork)network.Clone(), trainingSet),
+                new Backpropagation((BasicNetwork)network.Clone(), trainingSet, 0.01, 0),
+                new Backpropagation((BasicNetwork)network.Clone(), trainingSet, 0.005, 0),
             };
 
             double[,] results = new double[epochs + 1, algorithms.Length];
@@ -47,7 +50,7 @@ namespace enc.Benchmarks
 
             for (int i = 0; i < algorithms.Length; i++)
             {
-                Console.WriteLine("Algorytm: " + algorithms[i].GetType().ToString() );
+                Console.WriteLine("Algorytm: " + algorithms[i].GetType().Name );
 
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
